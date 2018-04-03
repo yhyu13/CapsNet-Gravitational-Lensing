@@ -203,7 +203,7 @@ def read_data_batch(indx, batch_size ,train_or_test):
     X = np.zeros((batch,numpix_side*numpix_side), dtype='float32') ;
     Y = np.zeros((batch,num_out), dtype='float32' );
     mag = np.zeros((batch_size,1))
-    inds = range(indx, indx+batch_size)
+    inds = range(indx*batch_size, (indx+1)+batch_size)
     if train_or_test == 'test':
         d_path = [[], [], []]
         d_path[0] = test_data_path_1
@@ -268,7 +268,7 @@ def read_data_batch(indx, batch_size ,train_or_test):
         apply_psf(im_telescope, max_psf_rms, apply_prob=0.8)
         add_poisson_noise(im_telescope, apply_prob=0.8)
         add_cosmic_ray(im_telescope, apply_prob=0.8)
-        add_gaussian_noise(im_telescope)
+        add_gaussian_noise(im_telescope)cost
         mask = gen_masks(30, ARCS.reshape((numpix_side, numpix_side)), apply_prob=0.5)
         mask = 1.0
 
