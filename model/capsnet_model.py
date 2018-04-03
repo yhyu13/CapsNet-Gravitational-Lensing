@@ -6,7 +6,7 @@ http://www.cs.toronto.edu/~fritz/absps/transauto6.pdf
 """
 import numpy as np
 import tensorflow as tf
-from src.tf_util import cost_tensor
+from tf_util import cost_tensor
 from model.baseline import Baseline
 
 

@@ -55,6 +55,7 @@ class Baseline(object):
                     self.hps.lrn_rate, self.global_step, 1e3, 0.66), self.hps.min_lrn_rate)
             else:
                 self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
+                
             tf.summary.scalar('learning_rate', self.lrn_rate)
 
             if self.hps.optimizer == 'sgd':

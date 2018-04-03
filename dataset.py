@@ -1,21 +1,30 @@
 # https://github.com/yhyu13/Ensai/blob/refactory/dataset.py
 from config import *
+import numpy as np
+
+import os
+import sys
 
 Y_all_train = [[], [], []]
 Y_all_test = [[], [], []]
 
-Y_all_train[0] = np.loadtxt(arcs_data_path_1 + 'parameters_train.txt')
-Y_all_test[0] = np.loadtxt(test_data_path_1 + 'parameters_test.txt')
+try:
+    Y_all_train[0] = np.loadtxt(arcs_data_path_1 + 'parameters_train.txt')
+    Y_all_test[0] = np.loadtxt(test_data_path_1 + 'parameters_test.txt')
 
-Y_all_train[1] = np.loadtxt(arcs_data_path_2 + 'parameters_train.txt')
-Y_all_test[1] = np.loadtxt(test_data_path_2 + 'parameters_test.txt')
+    Y_all_train[1] = np.loadtxt(arcs_data_path_2 + 'parameters_train.txt')
+    Y_all_test[1] = np.loadtxt(test_data_path_2 + 'parameters_test.txt')
 
-Y_all_train[2] = np.loadtxt(arcs_data_path_3 + 'parameters_train.txt')
-Y_all_test[2] = np.loadtxt(test_data_path_3 + 'parameters_test.txt')
+    Y_all_train[2] = np.loadtxt(arcs_data_path_3 + 'parameters_train.txt')
+    Y_all_test[2] = np.loadtxt(test_data_path_3 + 'parameters_test.txt')
 
 
-R_n = np.loadtxt( 'data/PS_4_real.txt')
-I_n = np.loadtxt( 'data/PS_4_imag.txt')
+    R_n = np.loadtxt( 'data/PS_4_real.txt')
+    I_n = np.loadtxt( 'data/PS_4_imag.txt')
+except FileNotFoundError:
+    print("[Errno 2] No such file or directory",file=sys.stderr)
+    sys.exit()
+    
 
 
 xv, yv = np.meshgrid(np.linspace(-L_side / 2.0, L_side / 2.0, num=numpix_side),
@@ -203,7 +212,7 @@ def read_data_batch(indx, batch_size ,train_or_test):
     X = np.zeros((batch,numpix_side*numpix_side), dtype='float32') ;
     Y = np.zeros((batch,num_out), dtype='float32' );
     mag = np.zeros((batch_size,1))
-    inds = range(indx*batch_size, (indx+1)+batch_size)
+    inds = range(indx*batch_size, (indx+1)*batch_size)
     if train_or_test == 'test':
         d_path = [[], [], []]
         d_path[0] = test_data_path_1
@@ -226,11 +235,7 @@ def read_data_batch(indx, batch_size ,train_or_test):
     for i in range(batch_size):
         while True:
             ARCS = 1
-            nt = 0
             while np.min(ARCS) == 1 or np.max(ARCS) < 0.4:
-                nt = nt + 1
-                if nt > 1:
-                    inds[i] = np.random.randint(0, high=max_file_num)
 
                 pick_folder = np.random.randint(0, high=num_data_dirs)
                 arc_filename = d_path[pick_folder] + train_or_test + \
@@ -268,7 +273,7 @@ def read_data_batch(indx, batch_size ,train_or_test):
         apply_psf(im_telescope, max_psf_rms, apply_prob=0.8)
         add_poisson_noise(im_telescope, apply_prob=0.8)
         add_cosmic_ray(im_telescope, apply_prob=0.8)
-        add_gaussian_noise(im_telescope)cost
+        add_gaussian_noise(im_telescope)
         mask = gen_masks(30, ARCS.reshape((numpix_side, numpix_side)), apply_prob=0.5)
         mask = 1.0
 

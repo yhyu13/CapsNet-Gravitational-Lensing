@@ -1,10 +1,10 @@
 from config import *
-from util import *
 from model import *
 
 from tf_util import init_xy_placeholder
 
-import cv2
+import os
+import sys
 import logging
 import daiquiri
 
@@ -59,11 +59,13 @@ class Network:
         logger.info('Done initializing variables')
         
     def init_cv2_display():
-        
+        # import cv2
+        pass
         
     def close(self):
         self.sess.close()
         logger.info(f'Network shutdown!')
+        sys.exit()
 
     def restore_model(self):
         if self.FLAGS.load_model_path is not None:
@@ -81,7 +83,7 @@ class Network:
         self.saver.save(self.sess, './savedmodels/model-{}.ckpt'.format(name),
                         global_step=self.sess.run(self.model.global_step))
         
-    def train_with_test(self, porportion=1.0, validation=False):
+    def train(self, porportion=1.0, validation=False):
         logger.info('Train model...')
         num_iter = int(num_training_samples * porportion // self.num_batch) + 1
         logger.info('1 Epoch training steps will be: {}'.format(num_iter))
@@ -100,7 +102,7 @@ class Network:
                     self.sess.run([self.model.train_op, self.summary, self.model.cost], feed_dict=feed_dict)
             except KeyboardInterrupt:
                 self.close()
-                sys.exit()
+                
             except tf.errors.InvalidArgumentError:
                 continue
             else:
@@ -108,8 +110,7 @@ class Network:
                 self.train_writer.add_summary(summary, global_step)
                 self.sess.run(self.model.increase_global_step)
                 if i % 2 == 0:
-                logger.debug(
-                    'Train step {} | Loss: {:.3f} | Global step: {}'.format(i,l,global_step))
+                    logger.debug('Train step {} | Loss: {:.3f} | Global step: {}'.format(i,l,global_step))
 
     def test(porportion=1.0, random_sample = False):
         logger.info('Test model...')
@@ -124,10 +125,10 @@ class Network:
                          self.model.is_training: False}
             try:
                 y_pred, y_pred_flipped, summary, l = \
-                    self.sess.run([self.model.y_pred, self.model.y_pred_flipped self.summary, self.model.cost], feed_dict=feed_dict)
+                    self.sess.run([self.model.y_pred, self.model.y_pred_flipped, self.summary, self.model.cost], feed_dict=feed_dict)
             except KeyboardInterrupt:
                 self.close()
-                sys.exit()
+                
             except tf.errors.InvalidArgumentError:
                 continue
             else:
