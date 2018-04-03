@@ -1,5 +1,4 @@
 # https://github.com/yhyu13/Ensai/blob/refactory/dataset.py
-
 from config import *
 
 Y_all_train = [[], [], []]
@@ -200,12 +199,12 @@ def pick_new_lens_center(ARCS, Y, xy_range=0.5):
     return shifted_ARCS, lensXY, m_shift, n_shift
 
 
-def read_data_batch(X, Y, mag, max_file_num, train_or_test):
-    batch_size = len(X)
-    #mag = np.zeros((batch_size,1))
+def read_data_batch(indx, batch_size ,train_or_test):
+    X = np.zeros((batch,numpix_side*numpix_side), dtype='float32') ;
+    Y = np.zeros((batch,num_out), dtype='float32' );
+    mag = np.zeros((batch_size,1))
+    inds = range(indx, indx+batch_size)
     if train_or_test == 'test':
-        #inds = range(batch_size)
-        np.random.seed(seed=2)
         d_path = [[], [], []]
         d_path[0] = test_data_path_1
         d_path[1] = test_data_path_2
@@ -214,10 +213,7 @@ def read_data_batch(X, Y, mag, max_file_num, train_or_test):
         d_lens_path[0] = testlens_data_path_1
         d_lens_path[1] = testlens_data_path_2
         d_lens_path[2] = testlens_data_path_3
-        inds = np.random.randint(0, high=max_file_num, size=batch_size)
     else:
-        np.random.seed(seed=None)
-        inds = np.random.randint(0, high=max_file_num, size=batch_size)
         d_path = [[], [], []]
         d_path[0] = arcs_data_path_1
         d_path[1] = arcs_data_path_2
@@ -227,12 +223,7 @@ def read_data_batch(X, Y, mag, max_file_num, train_or_test):
         d_lens_path[1] = lens_data_path_2
         d_lens_path[2] = lens_data_path_3
 
-    #inds = np.zeros((batch_size,),dtype='int')
     for i in range(batch_size):
-
-        # ARCS=1
-        #nt = 0
-
         while True:
             ARCS = 1
             nt = 0
@@ -297,4 +288,4 @@ def read_data_batch(X, Y, mag, max_file_num, train_or_test):
             Y[i, :] = np.zeros((1, num_out))
 
         np.random.set_state(rand_state)
-        # return 0
+        return X,Y,mag
