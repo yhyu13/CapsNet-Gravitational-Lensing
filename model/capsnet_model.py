@@ -194,7 +194,7 @@ class CapsNet(Baseline):
         
             # Compute length of each [None,output_num_capsule,output_dim_capsule]
             #y_pred = tf.sqrt(tf.reduce_sum(tf.square(cigits), 2))
-            self.y_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_fc')
+            self.y_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_fc', dropout_prob=0.5)
         """
         with tf.variable_scope('decoder'):
             x_recon = self._fully_connected(self.y_pred, 512, name='fc1')

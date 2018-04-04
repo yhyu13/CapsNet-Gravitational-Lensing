@@ -1,6 +1,8 @@
 # https://github.com/yhyu13/Ensai/blob/refactory/dataset.py
 from config import *
 import numpy as np
+from PIL import Image
+import scipy
 
 import os
 import sys
@@ -63,10 +65,10 @@ def read_batch_online(X, Y, max_file_num, train_or_test):
 
 def make_real_noise(Fmap):
     Npix = Fmap.shape[0]
-    Npix_2 = Npix / 2
-    Npix_2p1 = Npix / 2 + 1
-    Npix_2p2 = Npix / 2 + 2
-    Npix_2m1 = Npix / 2 - 1
+    Npix_2 = Npix // 2
+    Npix_2p1 = Npix // 2 + 1
+    Npix_2p2 = Npix // 2 + 2
+    Npix_2m1 = Npix // 2 - 1
 
     np.conj(np.fliplr(np.flipud(Fmap[Npix_2p1 - 1, 1:Npix_2 - 1].reshape((-1, 1))))).shape
 
@@ -209,8 +211,8 @@ def pick_new_lens_center(ARCS, Y, xy_range=0.5):
 
 
 def read_data_batch(indx, batch_size ,train_or_test):
-    X = np.zeros((batch,numpix_side*numpix_side), dtype='float32') ;
-    Y = np.zeros((batch,num_out), dtype='float32' );
+    X = np.zeros((batch_size,numpix_side*numpix_side), dtype='float32') ;
+    Y = np.zeros((batch_size,num_out), dtype='float32' );
     mag = np.zeros((batch_size,1))
     inds = range(indx*batch_size, (indx+1)*batch_size)
     if train_or_test == 'test':

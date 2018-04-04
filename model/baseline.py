@@ -217,16 +217,20 @@ class Baseline(object):
         else:
             return tf.nn.relu(x)
 
-    def _fully_connected(self, x, out_dim, name=''):
+    def _fully_connected(self, x, out_dim, name='', dropout_prob=None):
         """FullyConnected layer for final output."""
         x = tf.contrib.layers.flatten(x)
+        
+        if dropout_prob is not None:
+            x = tf.nn.dropout(x, dropout_prob)
+            
         w = tf.get_variable(
             name + 'DW', [x.get_shape()[1], out_dim],
             initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0, mode='FAN_AVG', uniform=True))
         b = tf.get_variable(name + 'biases', [out_dim],
                             initializer=tf.constant_initializer())
         return tf.nn.xw_plus_b(x, w, b)
-
+        
     def _global_avg_pool(self, x):
         assert x.get_shape().ndims == 4
         return tf.reduce_mean(x, [1, 2])

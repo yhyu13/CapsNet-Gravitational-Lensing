@@ -1,4 +1,5 @@
 import tensorflow as tf
+from config import numpix_side, num_out
 
 
 def cost_tensor(y_conv, y_label):
