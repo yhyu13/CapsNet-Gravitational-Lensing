@@ -90,8 +90,10 @@ class Network:
         
     def train(self, porportion=1.0, validation=False):
         logger.info('Train model...')
-        num_iter = int(num_training_samples * porportion // self.num_batch) + 1
+        num_iter = int(num_training_samples * porportion // self.num_batch)
         logger.info('1 Epoch training steps will be: {}'.format(num_iter))
+        
+        save_per_iter = num_iter / 10
         
         for i in range(num_iter):
         
@@ -116,6 +118,8 @@ class Network:
                 self.sess.run(self.model.increase_global_step)
                 if i % 2 == 0:
                     logger.info('Train step {} | Loss: {:.3f} | Global step: {}'.format(i,l,global_step))
+                #if (i+1) % save_per_iter == 0:
+                    #self.save_model(name="{}".format(global_step))
 
     def test(self, porportion=1.0, random_sample = False):
         logger.info('Test model...')
@@ -127,7 +131,7 @@ class Network:
             RMS_moving = 0.0
             Loss_moving = 0.0
         else:
-            num_iter = int(num_training_samples * porportion // self.num_batch) + 1
+            num_iter = int(num_training_samples * porportion // self.num_batch)
         
         logger.info('Testing steps will be: {}'.format(num_iter))
         

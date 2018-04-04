@@ -165,9 +165,9 @@ class CapsNet(Baseline):
             x = self._conv('primal_capsules_conv', x, cnn_kernel_size, filters[1],
                            filters[1], self._stride_arr(strides[1]), padding=padding)
             x = self._squash(x)
-            # 256 / 32 = 8
+
             capsules_dims = (filters[1] // filters[2])
-            # 6x6x256 / 8 = 1152
+
             num_capsules = np.prod(x.get_shape().as_list()[1:]) // (filters[1] // filters[2])
             # TensorFlow does the trick
             x = tf.reshape(x, [-1, num_capsules, capsules_dims])
