@@ -56,7 +56,7 @@ class Network:
         logger.info(
                 'Building Model Complete...Total parameters: {}'.format(self.model.total_parameters(var_list=var_to_save)))
         self.saver = tf.train.Saver(var_list=var_to_save, max_to_keep=10)
-        logger.info(f'Build Summary & Saver complete')
+        logger.info('Build Summary & Saver complete')
     
     def init_var(self):
         init = (var.initializer for var in tf.global_variables())
@@ -69,7 +69,7 @@ class Network:
         
     def close(self):
         self.sess.close()
-        logger.info(f'Network shutdown!')
+        logger.info('Network shutdown!')
         sys.exit()
 
     def restore_model(self):
