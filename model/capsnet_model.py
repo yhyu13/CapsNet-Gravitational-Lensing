@@ -60,13 +60,13 @@ class CapsNet(Baseline):
         # inputs.shape=[None, input_num_capsule, input_dim_capsule]
         # inputs_expand.shape=[None, 1, input_num_capsule, input_dim_capsule]
         inputs_expand = tf.expand_dims(inputs, 1)
-        tf.logging.info(f'Expanding inputs to be {inputs_expand.get_shape()}')
+        tf.logging.info('Expanding inputs to be {}'.format(inputs_expand.get_shape()))
 
         # Credit XifengGuo:
         # Replicate output_num_capsule dimension to prepare being multiplied by W
         # inputs_tiled.shape=[None, output_num_capsule, input_num_capsule, input_dim_capsule]
         inputs_tiled = tf.tile(inputs_expand, [1, output_num_capsule, 1, 1])
-        tf.logging.info(f'Tiling inputs to be {inputs_tiled.get_shape()}')
+        tf.logging.info('Tiling inputs to be {}'.format(inputs_tiled.get_shape()))
 
         # Credit XifengGuo:
         # Compute `inputs * W` by scanning inputs_tiled on dimension 0.
@@ -119,7 +119,7 @@ class CapsNet(Baseline):
                 b += tf.keras.backend.batch_dot(outputs, inputs_hat_stopped, [2, 3])
         # Credit XifengGuo:
         # End: Routing algorithm -----------------------------------------------------------------------#
-        tf.logging.info(f'image after this capsule layer {outputs.get_shape()}')
+        tf.logging.info('image after this capsule layer {}'.format(outputs.get_shape()))
         return outputs
 
     def build_graph(self):
@@ -158,7 +158,7 @@ class CapsNet(Baseline):
             x = self._conv('init_conv', x, cnn_kernel_size,
                            filters[0], filters[1], self._stride_arr(strides[0]), padding=padding)
             x = self._relu(x)
-            tf.logging.info(f'image after init {x.get_shape()}')
+            tf.logging.info('image after init {}'.format(x.get_shape()))
 
         with tf.variable_scope('primal_capsules'):
             x = self._batch_norm('primal_capsules_bn', x)
@@ -172,7 +172,7 @@ class CapsNet(Baseline):
             # TensorFlow does the trick
             x = tf.reshape(x, [-1, num_capsules, capsules_dims])
 
-            tf.logging.info(f'image after primal capsules {x.get_shape()}')
+            tf.logging.info('image after primal capsules {}'.format(x.get_shape()))
 
         if not self.hps.standard:
             # EXPERIMENT: adding multilayer capsules
@@ -189,7 +189,7 @@ class CapsNet(Baseline):
             params_shape = [self.hps.num_classes, num_capsules, filters[3], capsules_dims]
             cigits = self._capsule_layer(x, params_shape=params_shape,
                                          num_routing=self.hps.num_routing, name='capsules_final_cigits')
-            tf.logging.info(f'cigits shape {cigits.get_shape()}')
+            tf.logging.info('cigits shape {}'.format(cigits.get_shape()))
             
         
             # Compute length of each [None,output_num_capsule,output_dim_capsule]
@@ -203,20 +203,20 @@ class CapsNet(Baseline):
             x_recon = self._fully_connected(x_recon, 28**2, name='fc_final')
             x_recon = tf.reshape(x_recon, [-1, 28, 28, 1])
             self.recon_images = tf.sigmoid(x_recon)
-            tf.logging.info(f'reconstructed image shape {x_recon.get_shape()}')
+            tf.logging.info('reconstructed image shape {}'.format(x_recon.get_shape()))
        """
 
         with tf.variable_scope('costs'):
             L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
-            tf.summary.scalar(f'Prediction_loss', L)
+            tf.summary.scalar('Prediction_loss', L)
             """
             L = tf.losses.mean_squared_error(label=self.lables, predictions=self.y_pred)
             recon_L = tf.losses.mean_squared_error(labels=self.images, predictions=self.recon_images, weights=0.005 * 28**2)
 
             cost = L + self._decay() + recon_L
-            tf.summary.scalar(f'Total_loss', cost)
+            tf.summary.scalar('Total_loss', cost)
             
-            tf.summary.scalar(f'Reconstruction_loss', recon_L)
+            tf.summary.scalar('Reconstruction_loss', recon_L)
             return cost
             """
         return L
