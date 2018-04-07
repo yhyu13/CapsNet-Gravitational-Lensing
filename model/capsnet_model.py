@@ -172,7 +172,7 @@ class CapsNet(Baseline):
             # TensorFlow does the trick
             x = tf.reshape(x, [-1, num_capsules, capsules_dims])
 
-            tf.logging.info('image after primal capsules {}'.format(x.get_shape()))
+            tf.logging.info('image after primal capsulesself.y_pred_flipped = cost_tensor(self.y_pred, self.labels) {}'.format(x.get_shape()))
 
         if not self.hps.standard:
             # EXPERIMENT: adding multilayer capsules
@@ -208,7 +208,9 @@ class CapsNet(Baseline):
 
         with tf.variable_scope('costs'):
             L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
+            cost = L + self._decay()
             tf.summary.scalar('Prediction_loss', L)
+            tf.summary.scalar('Total_loss', cost)
             """
             L = tf.losses.mean_squared_error(label=self.lables, predictions=self.y_pred)
             recon_L = tf.losses.mean_squared_error(labels=self.images, predictions=self.recon_images, weights=0.005 * 28**2)
@@ -219,4 +221,4 @@ class CapsNet(Baseline):
             tf.summary.scalar('Reconstruction_loss', recon_L)
             return cost
             """
-        return L
+        return cost

@@ -21,6 +21,16 @@ To install dependencies, simply run:
 
 ```pip install -r requirment.txt```
 
+This project uses TensorFlow, a machine learning library developed and maintained by Google in principle.
+
+We will be using tensorflow version 1.4.0,
+
+```pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.4.0-cp35-cp35m-linux_x86_64.whl```
+
+users can choose to install its GPU optimized version accordingly,
+
+```pip install https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.4.0-cp35-cp35m-linux_x86_64.whl```
+
 To install cv2 in Anaconda:
 
 ```conda install -c menpo opencv=2.4.11```
