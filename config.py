@@ -1,6 +1,69 @@
 import argparse
+import os
 from collections import namedtuple
 
+# https://github.com/yasharhezaveh/Ensai/blob/master/init.py
+'''
+   Defining global variables
+'''
+
+num_out = FLAGS.n_labels  # number ouf output parameters being predicted
+numpix_side = FLAGS.n_img_row  # number of image pixels on the side
+
+max_trainoise_rms = 0.1  # maximum rms of noise in training data
+max_testnoise_rms = 0.1  # maximum rms of noise in test or validation data
+max_noise_rms = max_testnoise_rms
+
+max_psf_rms = 0.08 / 0.04  # maximum Gaussian PSF rms (in pixels)
+max_cr_intensity = 0.5  # maximum scaling for cosmic ray and artefact maps
+
+# if True, the noise rms will be chosen randomly for each sample with a max of max_noise_rms (above)
+variable_noise_rms = True
+
+cycle_batch_size = 50   # how many examples to read at a time (here it's equal to the batch size)
+num_test_samples = 1000  # number of test samples
+
+pix_res = 0.04  # pixel size in arcsec
+L_side = pix_res * numpix_side
+
+min_unmasked_flux = 0.75
+
+# number of folders containing training or test data. If all 3 point to the same folder that's OK (only that folder will be used).
+num_data_dirs = 3
+
+num_training_samples = 50000
+max_num_test_samples = 10000
+
+# Get current working directory
+cwd = os.getcwd()
+
+arcs_data_path_1 = cwd + '/data/ARCS_2/ARCS_2/'
+arcs_data_path_2 = cwd + '/data/ARCS_2/ARCS_2/'
+arcs_data_path_3 = cwd + '/data/ARCS_2/ARCS_2/'
+test_data_path_1 = cwd + '/data/SAURON_TEST/'
+test_data_path_2 = cwd + '/data/SAURON_TEST/'
+test_data_path_3 = cwd + '/data/SAURON_TEST/'
+
+lens_data_path_1 = cwd + '/data/ARCS_2/ARCS_2/'
+lens_data_path_2 = cwd + '/data/ARCS_2/ARCS_2/'
+lens_data_path_3 = cwd + '/data/ARCS_2/ARCS_2/'
+testlens_data_path_1 = cwd + '/data/SAURON_TEST/'
+testlens_data_path_2 = cwd + '/data/SAURON_TEST/'
+testlens_data_path_3 = cwd + '/data/SAURON_TEST/'
+
+# folder containing cosmic rays
+CRay_data_path = cwd + '/data/CosmicRays/'
+# file containing guassian noise data
+real_guassian_noise_path = cwd + '/data/PS_4_real.txt'
+imag_guassian_noise_path = cwd + '/data/PS_4_imag.txt'
+# xy range of center of the lens. The image is shifted in a central area with a side of max_xy_range (arcsec) during training or testing
+max_xy_range = 0.5
+
+# tensorflow logging folder
+train_log_folder = cwd + '/train_log'
+test_log_folder = cwd + '/test_log'
+
+savedmodel_path = cwd + '/savedmodels/'
 
 parser = argparse.ArgumentParser(description='Define parameters.')
 
@@ -54,55 +117,3 @@ HPS = HParams(batch_size=FLAGS.n_batch,
               optimizer='adam',
               temperature=1.0,
               global_norm=100)
-        
-              
-# https://github.com/yhyu13/Ensai/blob/refactory/config.py
-'''
-   Defining global variables
-'''
-
-num_out = FLAGS.n_labels  # number ouf output parameters being predicted
-numpix_side = FLAGS.n_img_row  # number of image pixels on the side
-
-max_trainoise_rms = 0.1  # maximum rms of noise in training data
-max_testnoise_rms = 0.1  # maximum rms of noise in test or validation data
-max_noise_rms = max_testnoise_rms
-
-max_psf_rms = 0.08 / 0.04  # maximum Gaussian PSF rms (in pixels)
-max_cr_intensity = 0.5  # maximum scaling for cosmic ray and artefact maps
-
-# if True, the noise rms will be chosen randomly for each sample with a max of max_noise_rms (above)
-variable_noise_rms = True
-
-cycle_batch_size = 50   # how many examples to read at a time (here it's equal to the batch size)
-num_test_samples = 1000  # number of test samples
-
-pix_res = 0.04  # pixel size in arcsec
-L_side = pix_res * numpix_side
-
-min_unmasked_flux = 0.75
-
-# number of folders containing training or test data. If all 3 point to the same folder that's OK (only that folder will be used).
-num_data_dirs = 3
-
-num_training_samples = 50000
-max_num_test_samples = 10000
-arcs_data_path_1 = 'data/ARCS_2/ARCS_2/'
-arcs_data_path_2 = 'data/ARCS_2/ARCS_2/'
-arcs_data_path_3 = 'data/ARCS_2/ARCS_2/'
-test_data_path_1 = 'data/SAURON_TEST/'
-test_data_path_2 = 'data/SAURON_TEST/'
-test_data_path_3 = 'data/SAURON_TEST/'
-
-lens_data_path_1 = 'data/ARCS_2/ARCS_2/'
-lens_data_path_2 = 'data/ARCS_2/ARCS_2/'
-lens_data_path_3 = 'data/ARCS_2/ARCS_2/'
-testlens_data_path_1 = 'data/SAURON_TEST/'
-testlens_data_path_2 = 'data/SAURON_TEST/'
-testlens_data_path_3 = 'data/SAURON_TEST/'
-
-# folder containing cosmic rays
-CRay_data_path = 'data/CosmicRays/'
-
-# xy range of center of the lens. The image is shifted in a central area with a side of max_xy_range (arcsec) during training or testing
-max_xy_range = 0.5
