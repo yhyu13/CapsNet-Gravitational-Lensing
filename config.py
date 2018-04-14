@@ -16,7 +16,7 @@ parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--model', default='cap', help='choose between cnn and cap')
 parser.add_argument('--dataset', dest='processed_dir', default='./MNIST_data')
-parser.add_argument('--load_model_path', dest='load_model_path', default=None)  # './savedmodels'
+parser.add_argument('--load_model_path', dest='load_model_path', default='./savedmodels')  # './savedmodels'
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
 
 FLAGS = parser.parse_args()
@@ -73,8 +73,11 @@ max_cr_intensity = 0.5  # maximum scaling for cosmic ray and artefact maps
 # if True, the noise rms will be chosen randomly for each sample with a max of max_noise_rms (above)
 variable_noise_rms = True
 
+num_training_samples = 50000
+max_num_test_samples = 10000
+
 cycle_batch_size = 50   # how many examples to read at a time (here it's equal to the batch size)
-num_test_samples = 1000  # number of test samples
+num_test_samples = max_num_test_samples#1000  # number of test samples
 
 pix_res = 0.04  # pixel size in arcsec
 L_side = pix_res * numpix_side
@@ -83,9 +86,6 @@ min_unmasked_flux = 0.75
 
 # number of folders containing training or test data. If all 3 point to the same folder that's OK (only that folder will be used).
 num_data_dirs = 3
-
-num_training_samples = 50000
-max_num_test_samples = 10000
 
 # Get current working directory
 cwd = os.getcwd()

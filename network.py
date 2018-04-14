@@ -77,7 +77,7 @@ class Network:
         if self.FLAGS.load_model_path is not None:
             logger.info('Loading Model...')
             try:
-                ckpt = tf.train.get_checkpoint_state(check_point_path)
+                ckpt = tf.train.get_checkpoint_state(self.FLAGS.load_model_path)
                 self.saver.restore(self.sess, ckpt.model_checkpoint_path)
                 logger.info('Loading Model Succeeded...')
             except:
@@ -85,7 +85,8 @@ class Network:
         else:
             logger.info('No Model to load')
 
-    def save_model(self, name):
+    def save_model(self, name=""):
+        logger.info('Saving model...')
         self.saver.save(self.sess, savedmodel_path + 'model-{}.ckpt'.format(name),
                         global_step=self.sess.run(self.model.global_step))
 
@@ -98,8 +99,8 @@ class Network:
 
         for i in range(num_iter):
 
-            if validation and (i % 20 == 1):
-                self.test(porportion=10, random_sample=True)
+            if validation and (i % 20 == 0):
+                self.test(porportion=20, random_sample=True)
                 continue
             x, y, _ = read_data_batch(indx=i, batch_size=self.num_batch, train_or_test="train")
             feed_dict = {self.x: x,
@@ -121,27 +122,30 @@ class Network:
                 if i % 2 == 0:
                     logger.info('Train step {} | Loss: {:.3f} | Global step: {}'.format(
                         i, l, global_step))
-                # if (i+1) % save_per_iter == 0:
-                    # self.save_model(name="{}".format(global_step))
+                if (i+2) % save_per_iter == 0:
+                    self.save_model(name=self.FLAGS.model)
 
     def test(self, porportion=1.0, random_sample=False):
         logger.info('Test model...')
-        RMS_moving = None
-        Loss_moving = None
+        
+        # init log file that contains RMS records
+        log_file = open("log_file.txt","w")
+        log_file.close()
+        
+        RMS_moving = 0.0
+        Loss_moving = 0.0
         if porportion > 1:
             """Validation"""
             num_iter = int(porportion)
-            RMS_moving = 0.0
-            Loss_moving = 0.0
         else:
-            num_iter = int(num_training_samples * porportion // self.num_batch)
+            num_iter = int(num_test_samples * porportion // self.num_batch)
 
         logger.info('Testing steps will be: {}'.format(num_iter))
 
         for i in range(num_iter):
 
             X, Y, _ = read_data_batch(indx=np.random.randint(0, high=num_test_samples // self.num_batch)
-                                      if max_num_test_samples else i, batch_size=self.num_batch, train_or_test="test")
+                                      if random_sample else i, batch_size=self.num_batch, train_or_test="test")
             feed_dict = {self.x: X,
                          self.y_label: Y,
                          self.model.is_training: False}
@@ -155,17 +159,21 @@ class Network:
             except tf.errors.InvalidArgumentError:
                 continue
             else:
-                global_step = self.sess.run(self.model.global_step)
-                self.test_writer.add_summary(summary, global_step)
                 ROT_COR_PARS = get_rotation_corrected(y_pred, y_pred_flipped, Y)
-                RMS = np.std(ROT_COR_PARS - Y, axis=0)
-                if RMS_moving is not None and Loss_moving is not None:
+                RMS = np.std(ROT_COR_PARS - Y, axis=0) 
+                RMS_moving += RMS
+                Loss_moving += l
+                
+                if porportion > 1:
                     """Validation"""
-                    RMS_moving += RMS
-                    Loss_moving += l
                     if i == num_iter - 1:
                         logger.info('Moving LOSSS: {:.3f} | Moving RMS: {}'.format(
                             Loss_moving / num_iter, np.array_str(RMS_moving / num_iter, precision=3)))
                 else:
-                    logger.info('Test step {} | LOSS: {:.3f} | RMS: {}'.format(
-                        i, l, np.array_str(RMS, precision=3)))
+                    global_step = self.sess.run(self.model.global_step)
+                    self.test_writer.add_summary(summary, global_step)
+                    logger.info('Moving LOSSS: {:.3f} | Moving RMS: {}'.format(
+                            Loss_moving / (i+1), np.array_str(RMS_moving / (i+1), precision=3)))
+                    #log_file = open("log_file.txt","a")
+                    #log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
+                    #log_file.close()
