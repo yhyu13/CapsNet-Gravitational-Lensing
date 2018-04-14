@@ -10,9 +10,9 @@ def train():
     
 def test():
     # HPS, FLAGS defined in config.py
-    assert(FLAGS.load_model_path is not None)
     net = Network(HPS, FLAGS)
-    net.restore_model()
+    if FLAGS.restore:
+        net.restore_model()
     net.test()
 
 if __name__ == "__main__":

@@ -15,8 +15,7 @@ parser.add_argument('--n_classes', type=int, default=10)
 parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--model', default='cap', help='choose between cnn and cap')
-parser.add_argument('--dataset', dest='processed_dir', default='./MNIST_data')
-parser.add_argument('--load_model_path', dest='load_model_path', default='./savedmodels')  # './savedmodels'
+parser.add_argument('--restore', action='store_true')
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
 
 FLAGS = parser.parse_args()
@@ -116,4 +115,5 @@ max_xy_range = 0.5
 train_log_folder = cwd + '/train_log'
 test_log_folder = cwd + '/test_log'
 
+# When restoring a model, please change tensorflow checkpoint file under this path accordingly.
 savedmodel_path = cwd + '/savedmodels/'

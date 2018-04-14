@@ -74,10 +74,10 @@ class Network:
         sys.exit()
 
     def restore_model(self):
-        if self.FLAGS.load_model_path is not None:
+        if savedmodel_path is not None:
             logger.info('Loading Model...')
             try:
-                ckpt = tf.train.get_checkpoint_state(self.FLAGS.load_model_path)
+                ckpt = tf.train.get_checkpoint_state(savedmodel_path)
                 self.saver.restore(self.sess, ckpt.model_checkpoint_path)
                 logger.info('Loading Model Succeeded...')
             except:
@@ -87,6 +87,7 @@ class Network:
 
     def save_model(self, name=""):
         logger.info('Saving model...')
+        # savedmodel_path is defined in config.py
         self.saver.save(self.sess, savedmodel_path + 'model-{}.ckpt'.format(name),
                         global_step=self.sess.run(self.model.global_step))
 
@@ -95,6 +96,7 @@ class Network:
         num_iter = int(num_training_samples * porportion // self.num_batch)
         logger.info('1 Epoch training steps will be: {}'.format(num_iter))
 
+        # save per 10% of training 
         save_per_iter = num_iter / 10
 
         for i in range(num_iter):
