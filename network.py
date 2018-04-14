@@ -52,6 +52,7 @@ class Network:
         self.train_writer = tf.summary.FileWriter(train_log_folder, self.sess.graph)
         self.test_writer = tf.summary.FileWriter(test_log_folder)
 
+        # Tensorflow 1.7 and beyond doesn't need the second half of var_to_save, otherwise a duplicate vairbale error
         var_to_save = tf.trainable_variables() + [var for var in tf.global_variables()
                                                   if ('bn' in var.name) and ('Adam' not in var.name) and ('Momentum' not in var.name) or ('global_step' in var.name)]
         logger.info(
@@ -174,8 +175,8 @@ class Network:
                 else:
                     global_step = self.sess.run(self.model.global_step)
                     self.test_writer.add_summary(summary, global_step)
-                    logger.info('Moving LOSSS: {:.3f} | Moving RMS: {}'.format(
-                            Loss_moving / (i+1), np.array_str(RMS_moving / (i+1), precision=3)))
+                    logger.info('Y_PRED: {} |Moving LOSSS: {:.3f} | Moving RMS: {}'.format(
+                           np.array_str(y_pred[0]) ,Loss_moving / (i+1), np.array_str(RMS_moving / (i+1), precision=3)))
                     #log_file = open("log_file.txt","a")
                     #log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
                     #log_file.close()
