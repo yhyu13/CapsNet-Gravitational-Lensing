@@ -20,13 +20,11 @@ try:
     Y_all_train[2] = np.loadtxt(arcs_data_path_3 + 'parameters_train.txt')
     Y_all_test[2] = np.loadtxt(test_data_path_3 + 'parameters_test.txt')
 
-
-    R_n = np.loadtxt( 'data/PS_4_real.txt')
-    I_n = np.loadtxt( 'data/PS_4_imag.txt')
+    R_n = np.loadtxt(real_guassian_noise_path)
+    I_n = np.loadtxt(imag_guassian_noise_path)
 except FileNotFoundError:
-    print("[Errno 2] No such file or directory",file=sys.stderr)
+    print("[Errno 2] No such file or directory", file=sys.stderr)
     sys.exit()
-    
 
 
 xv, yv = np.meshgrid(np.linspace(-L_side / 2.0, L_side / 2.0, num=numpix_side),
@@ -210,11 +208,11 @@ def pick_new_lens_center(ARCS, Y, xy_range=0.5):
     return shifted_ARCS, lensXY, m_shift, n_shift
 
 
-def read_data_batch(indx, batch_size ,train_or_test):
-    X = np.zeros((batch_size,numpix_side*numpix_side), dtype='float32') ;
-    Y = np.zeros((batch_size,num_out), dtype='float32' );
-    mag = np.zeros((batch_size,1))
-    inds = range(indx*batch_size, (indx+1)*batch_size)
+def read_data_batch(indx, batch_size, train_or_test):
+    X = np.zeros((batch_size, numpix_side * numpix_side), dtype='float32')
+    Y = np.zeros((batch_size, num_out), dtype='float32')
+    mag = np.zeros((batch_size, 1))
+    inds = range(indx * batch_size, (indx + 1) * batch_size)
     if train_or_test == 'test':
         d_path = [[], [], []]
         d_path[0] = test_data_path_1
@@ -295,4 +293,4 @@ def read_data_batch(indx, batch_size ,train_or_test):
             Y[i, :] = np.zeros((1, num_out))
 
         np.random.set_state(rand_state)
-        return X,Y,mag
+        return X, Y, mag

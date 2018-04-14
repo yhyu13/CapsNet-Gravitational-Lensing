@@ -1,6 +1,6 @@
 import argparse
+import os
 from collections import namedtuple
-
 
 parser = argparse.ArgumentParser(description='Define parameters.')
 
@@ -54,9 +54,8 @@ HPS = HParams(batch_size=FLAGS.n_batch,
               optimizer='adam',
               temperature=1.0,
               global_norm=100)
-        
-              
-# https://github.com/yhyu13/Ensai/blob/refactory/config.py
+
+# https://github.com/yasharhezaveh/Ensai/blob/master/init.py
 '''
    Defining global variables
 '''
@@ -87,22 +86,34 @@ num_data_dirs = 3
 
 num_training_samples = 50000
 max_num_test_samples = 10000
-arcs_data_path_1 = 'data/ARCS_2/ARCS_2/'
-arcs_data_path_2 = 'data/ARCS_2/ARCS_2/'
-arcs_data_path_3 = 'data/ARCS_2/ARCS_2/'
-test_data_path_1 = 'data/SAURON_TEST/'
-test_data_path_2 = 'data/SAURON_TEST/'
-test_data_path_3 = 'data/SAURON_TEST/'
 
-lens_data_path_1 = 'data/ARCS_2/ARCS_2/'
-lens_data_path_2 = 'data/ARCS_2/ARCS_2/'
-lens_data_path_3 = 'data/ARCS_2/ARCS_2/'
-testlens_data_path_1 = 'data/SAURON_TEST/'
-testlens_data_path_2 = 'data/SAURON_TEST/'
-testlens_data_path_3 = 'data/SAURON_TEST/'
+# Get current working directory
+cwd = os.getcwd()
+
+arcs_data_path_1 = cwd + '/data/ARCS_2/ARCS_2/'
+arcs_data_path_2 = cwd + '/data/ARCS_2/ARCS_2/'
+arcs_data_path_3 = cwd + '/data/ARCS_2/ARCS_2/'
+test_data_path_1 = cwd + '/data/SAURON_TEST/'
+test_data_path_2 = cwd + '/data/SAURON_TEST/'
+test_data_path_3 = cwd + '/data/SAURON_TEST/'
+
+lens_data_path_1 = cwd + '/data/ARCS_2/ARCS_2/'
+lens_data_path_2 = cwd + '/data/ARCS_2/ARCS_2/'
+lens_data_path_3 = cwd + '/data/ARCS_2/ARCS_2/'
+testlens_data_path_1 = cwd + '/data/SAURON_TEST/'
+testlens_data_path_2 = cwd + '/data/SAURON_TEST/'
+testlens_data_path_3 = cwd + '/data/SAURON_TEST/'
 
 # folder containing cosmic rays
-CRay_data_path = 'data/CosmicRays/'
-
+CRay_data_path = cwd + '/data/CosmicRays/'
+# file containing guassian noise data
+real_guassian_noise_path = cwd + '/data/PS_4_real.txt'
+imag_guassian_noise_path = cwd + '/data/PS_4_imag.txt'
 # xy range of center of the lens. The image is shifted in a central area with a side of max_xy_range (arcsec) during training or testing
 max_xy_range = 0.5
+
+# tensorflow logging folder
+train_log_folder = cwd + '/train_log'
+test_log_folder = cwd + '/test_log'
+
+savedmodel_path = cwd + '/savedmodels/'
