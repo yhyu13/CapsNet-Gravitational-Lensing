@@ -9,7 +9,7 @@ Author: Joshua Yao-Yu Lin\*, Hang Yu\*, Gilbert Holder\*
 A capsule network [1] is a new type of neural network proposed by Geoffrey Hinton. Hinton argues that the convolution neural network has several problems; for example, they cannot handle the orientation information very well. With a capsule network, the neurons are gathered in a group called capsule, and they output a “vector” instead of scalars.
 
 <p align="center">
-  <img width="460" height="300" src="imgs/capnet.png"/>
+  <img src="imgs/capnet.png"/>
 </p>
 
 *Figure 1. Architecture of Capsule Network with dynamic routing*
@@ -21,7 +21,7 @@ Several research groups in astrophysics have started using deep neural networks,
 In the area of astronomical observations, there are often cases where our target of interest is overlapping with other objects. It is often the case that a galaxy is overlapping another galaxy (an extreme example is shown in Fig.2 [3]) purely due to statistical chance.
 
 <p align="center">
-  <img src="imgs/ngc3314_keel.jpg"/>
+  <img width="460" height="300" src="imgs/ngc3314_keel.jpg"/>
 </p>
 
 *Figure.2 : NGC 3314: When Galaxies Overlap*
@@ -37,7 +37,7 @@ There are some particular cases where the foreground object is gravitationally d
 We would start with images of strong gravitational lensing. According to Einstein’s General Relativity, light from distant galaxies would be bent when passing through foreground mass (e.g. galaxies, or galaxies cluster, dark matter halo...etc) and would form an arc like image on the sky. By studying gravitational lensing, we could tell the underlying dark matter distribution in the foreground galaxies, and hence helps up understanding the universe. We would like to build our pipeline based on [2].
 
 <p align="center">
-  <img width="460" height="300" src="imgs/CapsLens_demo_v0406_v2.001.jpeg">
+  <img src="imgs/CapsLens_demo_v0406_v2.001.jpeg">
 </p>
 
 *Figure 4. A sketch about how CapsLens work: First we do a classification task on the input images into foreground galaxy and gravitational lens. Second, we use the regression task on the parameters Estimation.*
