@@ -37,10 +37,12 @@ There are some particular cases where the foreground object is gravitationally d
 We would start with images of strong gravitational lensing. According to Einstein’s General Relativity, light from distant galaxies would be bent when passing through foreground mass (e.g. galaxies, or galaxies cluster, dark matter halo...etc) and would form an arc like image on the sky. By studying gravitational lensing, we could tell the underlying dark matter distribution in the foreground galaxies, and hence helps up understanding the universe. We would like to build our pipeline based on [2].
 
 <p align="center">
-  <img width="400" height="300" src="imgs/CapsLens_demo_v0406_v2.001.jpeg">
+  <img width="800" height="400" src="imgs/CapsLens_demo_v0406_v2.001.jpeg">
 </p>
 
 *Figure 4. A sketch about how CapsLens work: First we do a classification task on the input images into foreground galaxy and gravitational lens. Second, we use the regression task on the parameters Estimation.*
+
+--
 
 We plan to apply Capsule Networks on strong gravitational images. To perform the task, we would like to use Nvidia GPU to train our network.
 
