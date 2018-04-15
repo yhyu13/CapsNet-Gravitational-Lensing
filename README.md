@@ -8,7 +8,7 @@ Author: Joshua Yao-Yu Lin\*, Hang Yu\*, Gilbert Holder\*
 
 A capsule network [1] is a new type of neural network proposed by Geoffrey Hinton. Hinton argues that the convolution neural network has several problems; for example, they cannot handle the orientation information very well. With a capsule network, the neurons are gathered in a group called capsule, and they output a “vector” instead of scalars.
 
-![](/imgs/Screen Shot 2018-04-06 at 1.56.46 PM.png)
+![](/imgs/Screen\ Shot\ 2018-04-06\ at\ 1.56.46 PM.png)
 *Figure 1. Architecture of Capsule Network with dynamic routing*
 
 Therefore, a capsule network can remember the “pose” of the object in images. For example, even when digits are overlapping, capsule networks seem to recognize them with good accuracy.
@@ -17,15 +17,18 @@ Several research groups in astrophysics have started using deep neural networks,
 
 In the area of astronomical observations, there are often cases where our target of interest is overlapping with other objects. It is often the case that a galaxy is overlapping another galaxy (an extreme example is shown in Fig.2 [3]) purely due to statistical chance.
 
-![](/imgs/ngc3314_keel.jpg)*Figure.2 : NGC 3314: When Galaxies Overlap*
+![](/imgs/ngc3314_keel.jpg)
+*Figure.2 : NGC 3314: When Galaxies Overlap*
 
 There are some particular cases where the foreground object is gravitationally distorting the image of the background object (e.g., Figure.3), leading to a unique opportunity to measure the gravitational properties of the foreground galaxy. Our research group has been actively using these systems [5] as a way to learn more about the mysterious dark matter that dominates the mass density of the universe but has yet to be detected in terrestrial laboratories.
 
-![](j1430lens_sdss.jpg)*Figure.3: The Sloan Lens ACS (SLACS)  Lens, SDSSJ1430: A Galaxy Einstein Ring*
+![](/imgs/j1430lens_sdss.jpg)
+*Figure.3: The Sloan Lens ACS (SLACS)  Lens, SDSSJ1430: A Galaxy Einstein Ring*
 
 We would start with images of strong gravitational lensing. According to Einstein’s General Relativity, light from distant galaxies would be bent when passing through foreground mass (e.g. galaxies, or galaxies cluster, dark matter halo...etc) and would form an arc like image on the sky. By studying gravitational lensing, we could tell the underlying dark matter distribution in the foreground galaxies, and hence helps up understanding the universe. We would like to build our pipeline based on [2].
 
-![](CapsLens_demo_v0406_v2.001.jepg)*Figure 4. A sketch about how CapsLens work: First we do a classification task on the input images into foreground galaxy and gravitational lens. Second, we use the regression task on the parameters Estimation.*
+![](/imgs/CapsLens_demo_v0406_v2.001.jepg)
+*Figure 4. A sketch about how CapsLens work: First we do a classification task on the input images into foreground galaxy and gravitational lens. Second, we use the regression task on the parameters Estimation.*
 
 --
 [1] Sabour, S., Frosst, N., & Hinton, G. E. (2017). Dynamic routing between capsules. In Advances in Neural Information Processing Systems (pp. 3859-3869).
