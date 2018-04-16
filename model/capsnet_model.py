@@ -164,20 +164,18 @@ class CapsNet(Baseline):
             x = self._batch_norm('primal_capsules_bn', x)
             x = self._conv('primal_capsules_conv', x, cnn_kernel_size, filters[1],
                            filters[1], self._stride_arr(strides[1]), padding=padding)
-            x = self._squash(x)
-
-            capsules_dims = (filters[1] // filters[2])
-
-            num_capsules = np.prod(x.get_shape().as_list()[1:]) // (filters[1] // filters[2])
+            #x = self._squash(x)
+            capsules_dims = filters[2]
+            num_capsules = np.prod(x.get_shape().as_list()[1:]) // capsules_dims
             # TensorFlow does the trick
             x = tf.reshape(x, [-1, num_capsules, capsules_dims])
-
-            tf.logging.info('image after primal capsulesself.y_pred_flipped = cost_tensor(self.y_pred, self.labels) {}'.format(x.get_shape()))
+            x = self._squash(x, axis=2)
+            tf.logging.info('image after primal capsules {}'.format(x.get_shape()))
 
         if not self.hps.standard:
             # EXPERIMENT: adding multilayer capsules
             with tf.variable_scope('digital_capsules_0'):
-                params_shape = [128, num_capsules, filters[3], capsules_dims, capsules_dims]
+                params_shape = [16, num_capsules, filters[3], capsules_dims, capsules_dims]
                 x = self._capsule_layer(x, params_shape=params_shape,
                                         num_routing=self.hps.num_routing)
 
@@ -190,8 +188,8 @@ class CapsNet(Baseline):
             cigits = self._capsule_layer(x, params_shape=params_shape,
                                          num_routing=self.hps.num_routing, name='capsules_final_cigits')
             tf.logging.info('cigits shape {}'.format(cigits.get_shape()))
-            
-        
+
+
             # Compute length of each [None,output_num_capsule,output_dim_capsule]
             #y_pred = tf.sqrt(tf.reduce_sum(tf.square(cigits), 2))
             self.y_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_fc', dropout_prob=0.5)
@@ -207,9 +205,9 @@ class CapsNet(Baseline):
        """
 
         with tf.variable_scope('costs'):
-            L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
-            cost = L + self._decay()
-            tf.summary.scalar('Prediction_loss', L)
+            self.L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
+            cost = self.L + self._decay()
+            tf.summary.scalar('Prediction_loss', self.L)
             tf.summary.scalar('Total_loss', cost)
             """
             L = tf.losses.mean_squared_error(label=self.lables, predictions=self.y_pred)
@@ -217,8 +215,63 @@ class CapsNet(Baseline):
 
             cost = L + self._decay() + recon_L
             tf.summary.scalar('Total_loss', cost)
-            
+
             tf.summary.scalar('Reconstruction_loss', recon_L)
             return cost
             """
         return cost
+
+class CapsNet2(CapsNet):
+    """CapsNet2 model.
+       Refactor squash function
+       Refactor _capsule_layer function
+    """
+
+    def __init__(self, hps, images, labels):
+        super().__init__(hps, images, labels)
+
+    def _squash(self, x, axis=-1):
+        """https://arxiv.org/pdf/1710.09829.pdf (eq.1)
+
+           squash activation that normalizes vectors by their relative lengths
+        """
+        square_norm = tf.reduce_sum(tf.square(x), axis=axis, keep_dims=True)
+        x = x * tf.sqrt(square_norm) / (1.0 + square_norm)
+        return x
+
+    def _capsule_layer(self, x, params_shape, num_routing, name=''):
+
+        assert len(params_shape) == 4, "Given wrong parameter shape."
+        output_num_capsule, input_num_capsule, output_dim_capsule, input_dim_capsule = params_shape
+
+        # x = self._batch_norm(name + '/bn', x)
+
+        # W.shape =  [None, input_num_capsule, input_dim_capsule, output_num_capsule, output_dim_capsule]
+        W = tf.get_variable(
+            name + '/capsule_layer_transformation_matrix', [1, input_num_capsule, input_dim_capsule, output_num_capsule, output_dim_capsule], tf.float32,
+            initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0, mode='FAN_AVG', uniform=True))
+
+        # b.shape = [None, self.intput_num_capsule, 1, self.output_num_capsule,1].
+        b = tf.get_variable(name + '/coupling_coefficient_logits', [1, input_num_capsule,1,output_num_capsule,1], initializer=tf.zeros_initializer())
+        c = tf.stop_gradient(tf.nn.softmax(b, dim=3))
+
+        # u.shape=[None, input_num_capsule, input_dim_capsule, 1, 1]
+        u = tf.expand_dims(tf.expand_dims(x, -1),-1)
+        u_ = tf.reduce_sum(u * W, axis=[2], keep_dims=True)
+        s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
+        v = self._squash(s, axis=-1)
+        tf.logging.info('Expanding inputs to be {}'.format(u.get_shape()))
+        tf.logging.info('Transforming and sum input capsule dimension (routing inputs){}'.format(u_.get_shape()))
+        tf.logging.info('Outputs of each routing iteration {}'.format(v.get_shape()))
+
+        assert num_routing > 0, 'The num_routing should be > 0.'
+
+        for i in range(num_routing-1):
+            b += tf.reduce_sum(u_ * v,axis=-1,keep_dims=True)
+            c =  tf.nn.softmax(b, dim=3)
+            s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
+            v = self._squash(s,axis=-1)
+
+        v_digit = tf.squeeze(v, axis=[1,2])
+        tf.logging.info('Image after this capsule layer {}'.format(v_digit.get_shape()))
+        return v_digit
