@@ -14,7 +14,7 @@ parser.add_argument('--n_img_channels', type=int, default=1)
 parser.add_argument('--n_classes', type=int, default=10)
 parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
-parser.add_argument('--model', default='cap', help='choose between cnn and cap')
+parser.add_argument('--model', default='cap2', help='choose between cnn and cap')
 parser.add_argument('--restore', action='store_true')
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
 

@@ -1,4 +1,4 @@
-# Estimate Gravitational Lensing with Capusle Network
+# CapsLens : Estimate Gravitational Lensing with Capsule Network
 
 ---
 
@@ -91,7 +91,7 @@ To install cv2 in Anaconda (optional):
 
 # Train
 
-Simply run this in terminal:
+Simply run this in terminal to train a CapsNet:
 
 ```python main.py --mode=train --model=cap```
 
@@ -99,12 +99,16 @@ To train a CNN baseline that has similar number of parameters (2M),
 
 ```python main.py --mode=train --model=cnn```
 
+To run a GPU-optimized CapsNet implementation (runs roughly 4 times faster),
+
+```python main.py --mode=train --model=cap2```
+
 # Test
 
 To test the initial Root Mean Square(RMS) error for an untrained network,
 
-```python main.py --mode=test --model=cap```
+```python main.py --mode=test --model=cap2```
 
 If you have finished training and have checkpoint files under ```./savedmodels```,
 
-```python main.py --mode=test --model=cap --restore```
+```python main.py --mode=test --model=cap2 --restore```
