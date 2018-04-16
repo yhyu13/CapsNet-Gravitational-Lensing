@@ -89,9 +89,9 @@ class CNNBaseline(Baseline):
             """Margin loss for Eq.(4). When y_true[i, :] contains not just one `1`, this loss should work too. Not test it."""
 
             #ce = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y_true), name='prediction_loss')
-            L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
+            self.L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
 
-            cost = L + self._decay()
+            cost = self.L + self._decay()
             tf.summary.scalar('Prediction_loss', L)
             tf.summary.scalar('Total_loss', cost)
         """
@@ -104,7 +104,7 @@ class CNNBaseline(Baseline):
         """
         return cost
 
-    
+
     def _fully_connected(self, x, out_dim, name=''):
         """FullyConnected layer for final output."""
         x = tf.contrib.layers.flatten(x)

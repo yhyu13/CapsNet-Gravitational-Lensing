@@ -1,6 +1,6 @@
 from config import *
 from dataset import read_data_batch, get_rotation_corrected
-from model.capsnet_model import CapsNet
+from model.capsnet_model import CapsNet, CapsNet2
 from model.cnn_baseline import CNNBaseline
 
 from tf_util import init_xy_placeholder
@@ -42,7 +42,8 @@ class Network:
 
     def init_model(self):
         models = {'cnn': lambda: CNNBaseline(self.hps, self.x_image, self.y_label),
-                  'cap': lambda: CapsNet(self.hps, self.x_image, self.y_label)}
+                  'cap': lambda: CapsNet(self.hps, self.x_image, self.y_label),
+                  'cap2': lambda: CapsNet2(self.hps, self.x_image, self.y_label)}
         self.model = models[self.FLAGS.model]()
         logger.info("Building Model...")
         self.model.build_graph()
@@ -97,7 +98,7 @@ class Network:
         num_iter = int(num_training_samples * porportion // self.num_batch)
         logger.info('1 Epoch training steps will be: {}'.format(num_iter))
 
-        # save per 10% of training 
+        # save per 10% of training
         save_per_iter = num_iter / 10
 
         for i in range(num_iter):
@@ -130,11 +131,11 @@ class Network:
 
     def test(self, porportion=1.0, random_sample=False):
         logger.info('Test model...')
-        
+
         # init log file that contains RMS records
         log_file = open("log_file.txt","w")
         log_file.close()
-        
+
         RMS_moving = 0.0
         Loss_moving = 0.0
         if porportion > 1:
@@ -163,10 +164,10 @@ class Network:
                 continue
             else:
                 ROT_COR_PARS = get_rotation_corrected(y_pred, y_pred_flipped, Y)
-                RMS = np.std(ROT_COR_PARS - Y, axis=0) 
+                RMS = np.std(ROT_COR_PARS - Y, axis=0)
                 RMS_moving += RMS
                 Loss_moving += l
-                
+
                 if porportion > 1:
                     """Validation"""
                     if i == num_iter - 1:

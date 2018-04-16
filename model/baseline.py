@@ -55,7 +55,7 @@ class Baseline(object):
                     self.hps.lrn_rate, self.global_step, 1e3, 0.66), self.hps.min_lrn_rate)
             else:
                 self.lrn_rate = tf.Variable(self.hps.lrn_rate, dtype=tf.float32, trainable=False)
-                
+
             tf.summary.scalar('learning_rate', self.lrn_rate)
 
             if self.hps.optimizer == 'sgd':
@@ -112,7 +112,7 @@ class Baseline(object):
         """Build training specific ops for the graph."""
         # Add histograms for trainable variables.
         # Add histograms for gradients.
-        if self.hps.grad_summary:
+        if self.hps.hist_summary:
             for grad, var in grads_vars:
                 if grad is not None:
                     tf.summary.histogram(var.op.name, var)
@@ -173,8 +173,10 @@ class Baseline(object):
             self._extra_train_ops.append(
                 moving_averages.assign_moving_average(
                     moving_variance, variance, 0.99))
-            tf.summary.histogram(moving_mean.op.name, moving_mean)
-            tf.summary.histogram(moving_variance.op.name, moving_variance)
+
+            if self.hps.hist_summary:
+                tf.summary.histogram(moving_mean.op.name, moving_mean)
+                tf.summary.histogram(moving_variance.op.name, moving_variance)
 
             def train():
                 # elipson used to be 1e-5. Maybe 0.001 solves NaN problem in deeper net.
@@ -204,7 +206,8 @@ class Baseline(object):
         for var in tf.trainable_variables():
             if var.op.name.find(r'DW') > 0:
                 costs.append(tf.nn.l2_loss(var))
-                # tf.summary.histogram(var.op.name, var)
+                if self.hps.hist_summary:
+                    tf.summary.histogram(var.op.name, var)
 
         return tf.multiply(self.hps.weight_decay_rate, tf.add_n(costs))
 
@@ -220,17 +223,17 @@ class Baseline(object):
     def _fully_connected(self, x, out_dim, name='', dropout_prob=None):
         """FullyConnected layer for final output."""
         x = tf.contrib.layers.flatten(x)
-        
+
         if dropout_prob is not None:
             x = tf.nn.dropout(x, dropout_prob)
-            
+
         w = tf.get_variable(
             name + 'DW', [x.get_shape()[1], out_dim],
             initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0, mode='FAN_AVG', uniform=True))
         b = tf.get_variable(name + 'biases', [out_dim],
                             initializer=tf.constant_initializer())
         return tf.nn.xw_plus_b(x, w, b)
-        
+
     def _global_avg_pool(self, x):
         assert x.get_shape().ndims == 4
         return tf.reduce_mean(x, [1, 2])
