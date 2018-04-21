@@ -107,6 +107,9 @@ class Network:
                 self.test(porportion=20, random_sample=True)
                 continue
             x, y, _ = read_data_batch(indx=i, batch_size=self.num_batch, train_or_test="train")
+            if self.FLAGS.scaleup:
+                y[:, 1:] *= 10
+
             feed_dict = {self.x: x,
                          self.y_label: y,
                          self.model.is_training: True}
@@ -126,14 +129,14 @@ class Network:
                 if i % 2 == 0:
                     logger.info('Train step {} | Loss: {:.3f} | Global step: {}'.format(
                         i, l, global_step))
-                if (i+2) % save_per_iter == 0:
+                if (i + 2) % save_per_iter == 0:
                     self.save_model(name=self.FLAGS.model)
 
     def test(self, porportion=1.0, random_sample=False):
         logger.info('Test model...')
 
         # init log file that contains RMS records
-        log_file = open("log_file.txt","w")
+        log_file = open("log_file.txt", "w")
         log_file.close()
 
         RMS_moving = 0.0
@@ -150,6 +153,9 @@ class Network:
 
             X, Y, _ = read_data_batch(indx=np.random.randint(0, high=num_test_samples // self.num_batch)
                                       if random_sample else i, batch_size=self.num_batch, train_or_test="test")
+
+            if self.FLAGS.scaleup:
+                Y[:, 1:] *= 10
             feed_dict = {self.x: X,
                          self.y_label: Y,
                          self.model.is_training: False}
@@ -163,6 +169,9 @@ class Network:
             except tf.errors.InvalidArgumentError:
                 continue
             else:
+                if self.FLAGS.scaleup:
+                    y_pred[:, 1:] *= 0.1
+                    y_pred_flipped[:, 1:] *= 0.1
                 ROT_COR_PARS = get_rotation_corrected(y_pred, y_pred_flipped, Y)
                 RMS = np.std(ROT_COR_PARS - Y, axis=0)
                 RMS_moving += RMS
@@ -177,7 +186,7 @@ class Network:
                     global_step = self.sess.run(self.model.global_step)
                     self.test_writer.add_summary(summary, global_step)
                     logger.info('Y_PRED: {} |Moving LOSSS: {:.3f} | Moving RMS: {}'.format(
-                           np.array_str(y_pred[0]) ,Loss_moving / (i+1), np.array_str(RMS_moving / (i+1), precision=3)))
+                        np.array_str(y_pred[0]), Loss_moving / (i + 1), np.array_str(RMS_moving / (i + 1), precision=3)))
                     #log_file = open("log_file.txt","a")
                     #log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
-                    #log_file.close()
+                    # log_file.close()

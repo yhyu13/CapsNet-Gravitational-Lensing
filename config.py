@@ -16,6 +16,7 @@ parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--model', default='cap2', help='choose between cnn and cap')
 parser.add_argument('--restore', action='store_true')
+parser.add_argument('--scaleup', action='store_true')
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
 
 FLAGS = parser.parse_args()
@@ -76,7 +77,7 @@ num_training_samples = 50000
 max_num_test_samples = 10000
 
 cycle_batch_size = 50   # how many examples to read at a time (here it's equal to the batch size)
-num_test_samples = max_num_test_samples#1000  # number of test samples
+num_test_samples = max_num_test_samples  # 1000  # number of test samples
 
 pix_res = 0.04  # pixel size in arcsec
 L_side = pix_res * numpix_side
