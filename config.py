@@ -16,6 +16,7 @@ parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--model', default='cap2', help='choose between cnn and cap')
 parser.add_argument('--restore', action='store_true')
+parser.add_argument('--scaleup', action='store_true')
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
 
 FLAGS = parser.parse_args()
