@@ -77,7 +77,7 @@ To install dependencies, simply run:
 
 This project uses TensorFlow, a machine learning library developed and maintained by Google in principle.
 
-We will be using tensorflow version 1.4.0 (a subtle difference has been observed in tensorflow 1.7.0, see ```network.py``` for details),
+We use tensorflow version 1.4.0 ***(required)***,
 
 ```pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.4.0-cp35-cp35m-linux_x86_64.whl```
 
