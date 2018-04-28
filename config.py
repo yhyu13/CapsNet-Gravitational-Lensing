@@ -73,10 +73,11 @@ max_cr_intensity = 0.5  # maximum scaling for cosmic ray and artefact maps
 # if True, the noise rms will be chosen randomly for each sample with a max of max_noise_rms (above)
 variable_noise_rms = True
 
-num_training_samples = 500000
+"""500K is total training sample, 50K is a sample"""
+num_training_samples = 50000 # 500000
 max_num_test_samples = 10000
 
-cycle_batch_size = 500   # how many examples to read at a time (here it's equal to the batch size)
+cycle_batch_size = FLAGS.n_batch #500   # how many examples to read at a time (here it's equal to the batch size)
 num_test_samples = max_num_test_samples#1000  # number of test samples
 
 pix_res = 0.04  # pixel size in arcsec
