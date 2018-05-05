@@ -190,3 +190,17 @@ class Network:
                     #log_file = open("log_file.txt","a")
                     #log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
                     # log_file.close()
+
+class Network2(Network):
+
+    def __init__(self, hps, FLAGS):
+        super().__init__(hps, FLAGS)
+
+    def init_preprocess(self):
+        self.x, self.y_regress_label, self.y_class_label, self.x_image = init_xy_placeholder2()
+
+    def init_model(self):
+        models = {'cap2': lambda: CapsNet3(self.hps, self.x_image, self.y_regress_label, self.y_class_label)}
+        self.model = models[self.FLAGS.model]()
+        logger.info("Building Model...")
+        self.model.build_graph()

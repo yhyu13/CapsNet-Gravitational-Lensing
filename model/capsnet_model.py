@@ -6,7 +6,7 @@ http://www.cs.toronto.edu/~fritz/absps/transauto6.pdf
 """
 import numpy as np
 import tensorflow as tf
-from tf_util import cost_tensor
+from tf_util import cost_tensor,cost_tensor2
 from model.baseline import Baseline
 
 
@@ -172,13 +172,6 @@ class CapsNet(Baseline):
             x = self._squash(x, axis=2)
             tf.logging.info('image after primal capsules {}'.format(x.get_shape()))
 
-        if not self.hps.standard:
-            # EXPERIMENT: adding multilayer capsules
-            with tf.variable_scope('digital_capsules_0'):
-                params_shape = [16, num_capsules, filters[3], capsules_dims, capsules_dims]
-                x = self._capsule_layer(x, params_shape=params_shape,
-                                        num_routing=self.hps.num_routing)
-
         with tf.variable_scope('digital_capsules_final'):
             """
                 params_shape = [output_num_capsule, input_num_capsule,
@@ -275,3 +268,66 @@ class CapsNet2(CapsNet):
         v_digit = tf.squeeze(v, axis=[1,2])
         tf.logging.info('Image after this capsule layer {}'.format(v_digit.get_shape()))
         return v_digit
+
+class CapsNet3(CapsNet2):
+    """CapsNet2 model.
+       Refactory squash function
+       Refactory _capsule_layer function
+    """
+
+    def __init__(self, hps, images, regress_labels, class_labels):
+        super().__init__(hps, images, regress_labels)
+        self.class_labels = class_labels
+
+    """Overrride _build_model"""
+
+    def _build_model(self):
+        """Build the core model within the graph."""
+
+        filters = self.hps.filters
+        assert isinstance(filters, list)
+        strides = self.hps.strides
+        assert isinstance(strides, list)
+        cnn_kernel_size = self.hps.cnn_kernel_size
+        assert isinstance(cnn_kernel_size, int)
+        padding = self.hps.padding
+
+        with tf.variable_scope('init'):
+            x = self.images
+            x = self._batch_norm('init_bn', x)
+            x = self._conv('init_conv', x, cnn_kernel_size,
+                           filters[0], filters[1], self._stride_arr(strides[0]), padding=padding)
+            x = self._relu(x)
+            tf.logging.info('image after init {}'.format(x.get_shape()))
+
+        with tf.variable_scope('primal_capsules'):
+            x = self._batch_norm('primal_capsules_bn', x)
+            x = self._conv('primal_capsules_conv', x, cnn_kernel_size, filters[1],
+                           filters[1], self._stride_arr(strides[1]), padding=padding)
+            #x = self._squash(x)
+            capsules_dims = filters[2]
+            num_capsules = np.prod(x.get_shape().as_list()[1:]) // capsules_dims
+            # TensorFlow does the trick
+            x = tf.reshape(x, [-1, num_capsules, capsules_dims])
+            x = self._squash(x, axis=2)
+            tf.logging.info('image after primal capsules {}'.format(x.get_shape()))
+
+        with tf.variable_scope('digital_capsules_final'):
+
+            params_shape = [self.hps.num_classes, num_capsules, filters[3], capsules_dims]
+            cigits = self._capsule_layer(x, params_shape=params_shape,
+                                         num_routing=self.hps.num_routing, name='capsules_final_cigits')
+
+            # Compute length of each [None,output_num_capsule,output_dim_capsule]
+            self.y_class_pred = tf.sqrt(tf.reduce_sum(tf.square(cigits), 2))
+
+            self.y_regress_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_regress_fc', dropout_prob=0.5)
+
+        with tf.variable_scope('costs'):
+            self.L, self.y_pred_flipped = cost_tensor2(self.y_regress_pred, self.regress_labels, self.y_class_pred, self.class_labels)
+
+            cost = self.L + self._decay()
+            tf.summary.scalar('Prediction_loss', self.L)
+            tf.summary.scalar('Total_loss', cost)
+
+        return cost
