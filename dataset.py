@@ -23,7 +23,7 @@ try:
     R_n = np.loadtxt(real_guassian_noise_path)
     I_n = np.loadtxt(imag_guassian_noise_path)
 except FileNotFoundError:
-    print("[Errno 2] No such file or directory", file=sys.stderr)
+    print("[Errno] No such file or directory. Exit.", file=sys.stderr)
     sys.exit()
 
 
@@ -294,3 +294,95 @@ def read_data_batch(indx, batch_size, train_or_test):
 
         np.random.set_state(rand_state)
         return X, Y, mag
+
+
+def read_data_batch2(indx, batch_size, train_or_test):
+    X = np.zeros((batch_size, numpix_side * numpix_side), dtype='float32')
+    Y = np.zeros((batch_size, num_out), dtype='float32')
+    Z = np.zeros((batch_size, 2), dtype='float32')
+    mag = np.zeros((batch_size, 1))
+    inds = range(indx * batch_size, (indx + 1) * batch_size)
+    if train_or_test == 'test':
+        d_path = [[], [], []]
+        d_path[0] = test_data_path_1
+        d_path[1] = test_data_path_2
+        d_path[2] = test_data_path_3
+        d_lens_path = [[], [], []]
+        d_lens_path[0] = testlens_data_path_1
+        d_lens_path[1] = testlens_data_path_2
+        d_lens_path[2] = testlens_data_path_3
+    else:
+        d_path = [[], [], []]
+        d_path[0] = arcs_data_path_1
+        d_path[1] = arcs_data_path_2
+        d_path[2] = arcs_data_path_3
+        d_lens_path = [[], [], []]
+        d_lens_path[0] = lens_data_path_1
+        d_lens_path[1] = lens_data_path_2
+        d_lens_path[2] = lens_data_path_3
+
+    for i in range(batch_size):
+        while True:
+            ARCS = 1
+            while np.min(ARCS) == 1 or np.max(ARCS) < 0.4:
+
+                pick_folder = np.random.randint(0, high=num_data_dirs)
+                arc_filename = d_path[pick_folder] + train_or_test + \
+                    '_' + "%07d" % (inds[i] + 1) + '.png'
+                lens_filename = d_lens_path[pick_folder] + \
+                    train_or_test + '_' + "%07d" % (inds[i] + 1) + '.png'
+
+                if train_or_test == 'test':
+                    Y[i, :] = Y_all_test[pick_folder][inds[i], 0:5]
+                    Z[i, :] = Y_all_test[pick_folder][inds[i], 8:10]
+                    mag[i] = Y_all_test[pick_folder][inds[i], 7]
+                else:
+                    Y[i, :] = Y_all_train[pick_folder][inds[i], 0:5]
+                    Z[i, :] = Y_all_test[pick_folder][inds[i], 8:19]
+                    mag[i] = Y_all_train[pick_folder][inds[i], 7]
+
+                ARCS = np.array(Image.open(arc_filename), dtype='float32').reshape(
+                    numpix_side * numpix_side,) / 65535.0
+                LENS = np.array(Image.open(lens_filename), dtype='float32').reshape(
+                    numpix_side * numpix_side,) / 65535.0
+
+            ARCS_SHIFTED, lensXY, m_shift, n_shift = pick_new_lens_center(
+                ARCS, Y[i, :], xy_range=max_xy_range)
+            LENS_SHIFTED = im_shift(LENS.reshape((numpix_side, numpix_side)),
+                                    m_shift, n_shift).reshape((numpix_side * numpix_side,))
+
+            ARCS = np.copy(ARCS_SHIFTED)
+            Y[i, 3] = lensXY[0]
+            Y[i, 4] = lensXY[1]
+
+            if (np.all(np.isnan(ARCS) == False)) and ((np.all(ARCS >= 0)) and (np.all(np.isnan(Y[i, 3:5]) == False))) and ~np.all(ARCS == 0):
+                break
+
+        rand_state = np.random.get_state()
+
+        im_telescope = np.copy(ARCS) + LENS_SHIFTED * np.random.normal(loc=0.0, scale=0.01)
+        apply_psf(im_telescope, max_psf_rms, apply_prob=0.8)
+        add_poisson_noise(im_telescope, apply_prob=0.8)
+        add_cosmic_ray(im_telescope, apply_prob=0.8)
+        add_gaussian_noise(im_telescope)
+        mask = gen_masks(30, ARCS.reshape((numpix_side, numpix_side)), apply_prob=0.5)
+        mask = 1.0
+
+        if np.any(ARCS > 0.4):
+            val_to_normalize = np.max(im_telescope[ARCS > 0.4])
+            if val_to_normalize == 0:
+                val_to_normalize = 1.0
+            int_mult = np.random.normal(loc=1.0, scale=0.01)
+            im_telescope = (im_telescope / val_to_normalize) * int_mult
+
+        im_telescope = im_telescope.reshape(numpix_side, numpix_side)
+        zero_bias = np.random.normal(loc=0.0, scale=0.05)
+        im_telescope = (im_telescope + zero_bias) * mask
+        X[i, :] = im_telescope.reshape((1, -1))
+        if np.any(np.isnan(X[i, :])) or np.any(np.isnan(Y[i, :])):
+            X[i, :] = np.zeros((1, numpix_side * numpix_side))
+            Y[i, :] = np.zeros((1, num_out))
+            Z[i, :] = np.zeros((1, 2))
+
+        np.random.set_state(rand_state)
+        return X, Y, Z, mag

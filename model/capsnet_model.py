@@ -6,7 +6,7 @@ http://www.cs.toronto.edu/~fritz/absps/transauto6.pdf
 """
 import numpy as np
 import tensorflow as tf
-from tf_util import cost_tensor,cost_tensor2
+from tf_util import cost_tensor, cost_tensor2
 from model.baseline import Baseline
 
 
@@ -182,10 +182,10 @@ class CapsNet(Baseline):
                                          num_routing=self.hps.num_routing, name='capsules_final_cigits')
             tf.logging.info('cigits shape {}'.format(cigits.get_shape()))
 
-
             # Compute length of each [None,output_num_capsule,output_dim_capsule]
             #y_pred = tf.sqrt(tf.reduce_sum(tf.square(cigits), 2))
-            self.y_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_fc', dropout_prob=0.5)
+            self.y_pred = self._fully_connected(
+                cigits, self.hps.num_labels, name='capsules_final_fc', dropout_prob=0.5)
         """
         with tf.variable_scope('decoder'):
             x_recon = self._fully_connected(self.y_pred, 512, name='fc1')
@@ -214,6 +214,7 @@ class CapsNet(Baseline):
             """
         return cost
 
+
 class CapsNet2(CapsNet):
     """CapsNet2 model.
        Refactor squash function
@@ -241,42 +242,47 @@ class CapsNet2(CapsNet):
 
         # W.shape =  [None, input_num_capsule, input_dim_capsule, output_num_capsule, output_dim_capsule]
         W = tf.get_variable(
-            name + '/capsule_layer_transformation_matrix', [1, input_num_capsule, input_dim_capsule, output_num_capsule, output_dim_capsule], tf.float32,
+            name + '/capsule_layer_transformation_matrix', [
+                1, input_num_capsule, input_dim_capsule, output_num_capsule, output_dim_capsule], tf.float32,
             initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0, mode='FAN_AVG', uniform=True))
 
         # b.shape = [None, self.intput_num_capsule, 1, self.output_num_capsule,1].
-        b = tf.get_variable(name + '/coupling_coefficient_logits', [1, input_num_capsule,1,output_num_capsule,1], initializer=tf.zeros_initializer())
+        b = tf.get_variable(name + '/coupling_coefficient_logits',
+                            [1, input_num_capsule, 1, output_num_capsule, 1], initializer=tf.zeros_initializer())
         c = tf.stop_gradient(tf.nn.softmax(b, dim=3))
 
         # u.shape=[None, input_num_capsule, input_dim_capsule, 1, 1]
-        u = tf.expand_dims(tf.expand_dims(x, -1),-1)
+        u = tf.expand_dims(tf.expand_dims(x, -1), -1)
         u_ = tf.reduce_sum(u * W, axis=[2], keep_dims=True)
         s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
         v = self._squash(s, axis=-1)
         tf.logging.info('Expanding inputs to be {}'.format(u.get_shape()))
-        tf.logging.info('Transforming and sum input capsule dimension (routing inputs){}'.format(u_.get_shape()))
+        tf.logging.info(
+            'Transforming and sum input capsule dimension (routing inputs){}'.format(u_.get_shape()))
         tf.logging.info('Outputs of each routing iteration {}'.format(v.get_shape()))
 
         assert num_routing > 0, 'The num_routing should be > 0.'
 
-        for i in range(num_routing-1):
-            b += tf.reduce_sum(u_ * v,axis=-1,keep_dims=True)
-            c =  tf.nn.softmax(b, dim=3)
+        for i in range(num_routing - 1):
+            b += tf.reduce_sum(u_ * v, axis=-1, keep_dims=True)
+            c = tf.nn.softmax(b, dim=3)
             s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
-            v = self._squash(s,axis=-1)
+            v = self._squash(s, axis=-1)
 
-        v_digit = tf.squeeze(v, axis=[1,2])
+        v_digit = tf.squeeze(v, axis=[1, 2])
         tf.logging.info('Image after this capsule layer {}'.format(v_digit.get_shape()))
         return v_digit
 
+
 class CapsNet3(CapsNet2):
-    """CapsNet2 model.
-       Refactory squash function
-       Refactory _capsule_layer function
+    """CapsNet3 model.
+       Predict existence of foregroud and background galaxy
+       Predict lensing parameters
     """
 
     def __init__(self, hps, images, regress_labels, class_labels):
         super().__init__(hps, images, regress_labels)
+        self.regress_labels = self.labels
         self.class_labels = class_labels
 
     """Overrride _build_model"""
@@ -314,20 +320,30 @@ class CapsNet3(CapsNet2):
 
         with tf.variable_scope('digital_capsules_final'):
 
-            params_shape = [self.hps.num_classes, num_capsules, filters[3], capsules_dims]
+            params_shape = [self.hps.task2_num_classes, num_capsules, filters[3], capsules_dims]
             cigits = self._capsule_layer(x, params_shape=params_shape,
                                          num_routing=self.hps.num_routing, name='capsules_final_cigits')
 
             # Compute length of each [None,output_num_capsule,output_dim_capsule]
             self.y_class_pred = tf.sqrt(tf.reduce_sum(tf.square(cigits), 2))
 
-            self.y_regress_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_regress_fc', dropout_prob=0.5)
+            self.y_regress_pred = self._fully_connected(
+                cigits, self.hps.num_labels, name='capsules_final_regress_fc', dropout_prob=0.5)
 
         with tf.variable_scope('costs'):
-            self.L, self.y_pred_flipped = cost_tensor2(self.y_regress_pred, self.regress_labels, self.y_class_pred, self.class_labels)
+            self.L, self.y_pred_flipped, spread_loss = cost_tensor2(
+                self.y_regress_pred, self.regress_labels, self.y_class_pred, self.class_labels)
 
             cost = self.L + self._decay()
             tf.summary.scalar('Prediction_loss', self.L)
             tf.summary.scalar('Total_loss', cost)
+
+        with tf.variable_scope('acc'):
+            # spread_loss entry equals to zero implies vector length is bigger/smaller than upper/lower margin
+            # thus spread_loss entry equals to zero means correct prediction
+            correct_prediction = tf.equal(spread_loss, 0)
+            self.acc = tf.reduce_mean(
+                tf.cast(correct_prediction, tf.float32), name='acc')
+            tf.summary.scalar('accuracy', self.acc)
 
         return cost

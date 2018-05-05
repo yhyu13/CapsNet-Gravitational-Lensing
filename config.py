@@ -11,7 +11,6 @@ parser.add_argument('--n_batch', type=int, default=50)
 parser.add_argument('--n_img_row', type=int, default=192)
 parser.add_argument('--n_img_col', type=int, default=192)
 parser.add_argument('--n_img_channels', type=int, default=1)
-parser.add_argument('--n_classes', type=int, default=2)
 parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--model', default='cap2', help='choose between cnn and cap')
@@ -24,7 +23,7 @@ FLAGS = parser.parse_args()
 
 """CapsNet hyperparameters"""
 HParams = namedtuple('HParams',
-                     'batch_size, num_classes, num_labels '
+                     'batch_size, num_classes, num_labels, task2_num_classes, '
                      'filters, strides, cnn_kernel_size, padding, '
                      'lambda_margin_loss,m_plus_margin_loss,m_minus_margin_loss, '
                      'num_routing, standard, label_masking, hist_summary, grad_defense, '
@@ -32,8 +31,9 @@ HParams = namedtuple('HParams',
                      'fixed_lrn, min_lrn_rate, lrn_rate, decay_step, optimizer, temperature, global_norm, ')
 
 HPS = HParams(batch_size=FLAGS.n_batch,
-              num_classes=FLAGS.n_classes,
+              num_classes=10,
               num_labels=FLAGS.n_labels,
+              task2_num_classes=2,
               filters=[1, 128, 8, 16],
               strides=[5, 5],
               cnn_kernel_size=9,

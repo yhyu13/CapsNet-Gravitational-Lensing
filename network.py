@@ -1,6 +1,6 @@
 from config import *
-from dataset import read_data_batch, get_rotation_corrected
-from model.capsnet_model import CapsNet, CapsNet2
+from dataset import read_data_batch, read_data_batch2, get_rotation_corrected
+from model.capsnet_model import CapsNet, CapsNet2, CapsNet3
 from model.cnn_baseline import CNNBaseline
 
 from tf_util import init_xy_placeholder
@@ -28,7 +28,7 @@ class Network:
         g = tf.Graph()
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        #config.gpu_options.per_process_gpu_memory_fraction = 0.33
+        # config.gpu_options.per_process_gpu_memory_fraction = 0.33
         self.sess = tf.Session(config=config, graph=g)
 
         with g.as_default():
@@ -187,9 +187,10 @@ class Network:
                     self.test_writer.add_summary(summary, global_step)
                     logger.info('Y_PRED: {} |Moving LOSSS: {:.3f} | Moving RMS: {}'.format(
                         np.array_str(y_pred[0]), Loss_moving / (i + 1), np.array_str(RMS_moving / (i + 1), precision=3)))
-                    #log_file = open("log_file.txt","a")
-                    #log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
+                    # log_file = open("log_file.txt","a")
+                    # log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
                     # log_file.close()
+
 
 class Network2(Network):
 
@@ -200,7 +201,110 @@ class Network2(Network):
         self.x, self.y_regress_label, self.y_class_label, self.x_image = init_xy_placeholder2()
 
     def init_model(self):
-        models = {'cap2': lambda: CapsNet3(self.hps, self.x_image, self.y_regress_label, self.y_class_label)}
+        models = {'cap2': lambda: CapsNet3(
+            self.hps, self.x_image, self.y_regress_label, self.y_class_label)}
         self.model = models[self.FLAGS.model]()
         logger.info("Building Model...")
         self.model.build_graph()
+
+    def train(self, porportion=1.0, validation=False):
+        logger.info('Train model...')
+        num_iter = int(num_training_samples * porportion // self.num_batch)
+        logger.info('1 Epoch training steps will be: {}'.format(num_iter))
+
+        # save per 10% of training
+        save_per_iter = num_iter / 10
+
+        for i in range(num_iter):
+
+            if validation and (i % 20 == 0):
+                self.test(porportion=20, random_sample=True)
+                continue
+            x, y, z, _ = read_data_batch2(indx=i, batch_size=self.num_batch, train_or_test="train")
+            if self.FLAGS.scaleup:
+                y[:, 1:] *= 10
+
+            feed_dict = {self.x: x,
+                         self.y_regress_label: y,
+                         self.y_class_label: z,
+                         self.model.is_training: True}
+            try:
+                _, summary, l = \
+                    self.sess.run([self.model.train_op, self.summary,
+                                   self.model.cost], feed_dict=feed_dict)
+            except KeyboardInterrupt:
+                self.close()
+
+            except tf.errors.InvalidArgumentError:
+                continue
+            else:
+                global_step = self.sess.run(self.model.global_step)
+                self.train_writer.add_summary(summary, global_step)
+                self.sess.run(self.model.increase_global_step)
+                if i % 2 == 0:
+                    logger.info('Train step {} | Loss: {:.3f} | Global step: {}'.format(
+                        i, l, global_step))
+                if (i + 2) % save_per_iter == 0:
+                    self.save_model(name=self.FLAGS.model)
+
+    def test(self, porportion=1.0, random_sample=False):
+        logger.info('Test model...')
+
+        # init log file that contains RMS records
+        log_file = open("log_file.txt", "w")
+        log_file.close()
+
+        RMS_moving = 0.0
+        Loss_moving = 0.0
+        Acc_moving = 0.0
+        if porportion > 1:
+            """Validation"""
+            num_iter = int(porportion)
+        else:
+            num_iter = int(num_test_samples * porportion // self.num_batch)
+
+        logger.info('Testing steps will be: {}'.format(num_iter))
+
+        for i in range(num_iter):
+
+            X, Y, Z, _ = read_data_batch2(indx=np.random.randint(0, high=num_test_samples // self.num_batch)
+                                          if random_sample else i, batch_size=self.num_batch, train_or_test="test")
+
+            if self.FLAGS.scaleup:
+                Y[:, 1:] *= 10
+            feed_dict = {self.x: X,
+                         self.y_regress_label: Y,
+                         self.y_class_label: Z,
+                         self.model.is_training: False}
+            try:
+                y_pred, y_pred_flipped, summary, l, acc = \
+                    self.sess.run([self.model.y_regress_pred, self.model.y_pred_flipped,
+                                   self.summary, self.model.cost, self.model.acc], feed_dict=feed_dict)
+            except KeyboardInterrupt:
+                self.close()
+
+            except tf.errors.InvalidArgumentError:
+                continue
+            else:
+                if self.FLAGS.scaleup:
+                    y_pred[:, 1:] *= 0.1
+                    y_pred_flipped[:, 1:] *= 0.1
+                ROT_COR_PARS = get_rotation_corrected(y_pred, y_pred_flipped, Y)
+                RMS = np.std(ROT_COR_PARS - Y, axis=0)
+                RMS_moving += RMS
+                Loss_moving += l
+                Acc_moving += acc
+
+                if porportion > 1:
+                    """Validation"""
+                    if i == num_iter - 1:
+                        logger.info('Moving LOSSS: {:.3f} | Moving RMS: {} | Moving Accuray: {}'.format(
+                            Loss_moving / num_iter, np.array_str(RMS_moving / num_iter, precision=3), Acc_moving / num_iter))
+                else:
+                    global_step = self.sess.run(self.model.global_step)
+                    self.test_writer.add_summary(summary, global_step)
+                    logger.info('Y_PRED: {} |Moving LOSSS: {:.3f} | Moving RMS: {} | Moving Accuray: {}'.format(
+                        np.array_str(y_pred[0]), Loss_moving / (i + 1), np.array_str(RMS_moving / (i + 1), precision=3), Acc_moving / (i + 1)))
+                    # log_file = open("log_file.txt","a")
+                    # log_file.write('{} '.format(i) + ' '.join(map(str,[round(i,5) for i in RMS])) + ' {.5f}\n'.format(l) )
+                    # log_file.close()
