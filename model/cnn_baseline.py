@@ -92,7 +92,7 @@ class CNNBaseline(Baseline):
             self.L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
 
             cost = self.L + self._decay()
-            tf.summary.scalar('Prediction_loss', L)
+            tf.summary.scalar('Prediction_loss', self.L)
             tf.summary.scalar('Total_loss', cost)
         """
         with tf.variable_scope('acc'):

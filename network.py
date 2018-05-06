@@ -172,6 +172,7 @@ class Network:
                 if self.FLAGS.scaleup:
                     y_pred[:, 1:] *= 0.1
                     y_pred_flipped[:, 1:] *= 0.1
+                    Y[:, 1:] *= 0.1
                 ROT_COR_PARS = get_rotation_corrected(y_pred, y_pred_flipped, Y)
                 RMS = np.std(ROT_COR_PARS - Y, axis=0)
                 RMS_moving += RMS
