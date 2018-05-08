@@ -247,27 +247,34 @@ class CapsNet2(CapsNet):
             initializer=tf.contrib.layers.variance_scaling_initializer(factor=1.0, mode='FAN_AVG', uniform=True))
 
         # b.shape = [None, self.intput_num_capsule, 1, self.output_num_capsule,1].
-        b = tf.get_variable(name + '/coupling_coefficient_logits',
-                            [1, input_num_capsule, 1, output_num_capsule, 1], initializer=tf.zeros_initializer())
-        c = tf.stop_gradient(tf.nn.softmax(b, dim=3))
+        #b = tf.get_variable(name + '/coupling_coefficient_logits',[1, input_num_capsule, 1, output_num_capsule, 1], initializer=tf.zeros_initializer())
+        b = tf.zeros([1, input_num_capsule, 1, output_num_capsule, 1])
+        c = tf.nn.softmax(b, dim=3)
 
         # u.shape=[None, input_num_capsule, input_dim_capsule, 1, 1]
         u = tf.expand_dims(tf.expand_dims(x, -1), -1)
         u_ = tf.reduce_sum(u * W, axis=[2], keep_dims=True)
-        s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
+        u_stopped = tf.stop_gradient(u_)
+        
+        s = tf.reduce_sum(u_stopped * c, axis=[1], keep_dims=True)
         v = self._squash(s, axis=-1)
         tf.logging.info('Expanding inputs to be {}'.format(u.get_shape()))
         tf.logging.info(
             'Transforming and sum input capsule dimension (routing inputs){}'.format(u_.get_shape()))
         tf.logging.info('Outputs of each routing iteration {}'.format(v.get_shape()))
 
-        assert num_routing > 0, 'The num_routing should be > 0.'
+        assert num_routing > 1, 'The num_routing should be > 1.'
 
-        for i in range(num_routing - 1):
-            b += tf.reduce_sum(u_ * v, axis=-1, keep_dims=True)
+        for i in range(num_routing - 2):
+            b += tf.reduce_sum(u_stopped * v, axis=-1, keep_dims=True)
             c = tf.nn.softmax(b, dim=3)
-            s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
+            s = tf.reduce_sum(u_stopped * c, axis=[1], keep_dims=True)
             v = self._squash(s, axis=-1)
+
+        b += tf.reduce_sum(u_ * v, axis=-1, keep_dims=True)
+        c = tf.nn.softmax(b, dim=3)
+        s = tf.reduce_sum(u_ * c, axis=[1], keep_dims=True)
+        v = self._squash(s, axis=-1)
 
         v_digit = tf.squeeze(v, axis=[1, 2])
         tf.logging.info('Image after this capsule layer {}'.format(v_digit.get_shape()))

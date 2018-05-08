@@ -5,7 +5,7 @@ from network import *
 
 def train():
     # HPS, FLAGS defined in config.py
-    if not FLAGS.task2
+    if not FLAGS.task2:
         net = Network(HPS, FLAGS)
     else:
         net = Network2(HPS, FLAGS)
@@ -14,7 +14,7 @@ def train():
 
 def test():
     # HPS, FLAGS defined in config.py
-    if not FLAGS.task2
+    if not FLAGS.task2:
         net = Network(HPS, FLAGS)
     else:
         net = Network2(HPS, FLAGS)
