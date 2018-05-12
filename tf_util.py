@@ -54,3 +54,8 @@ def init_xy_placeholder():
     im_bias = tf.reshape(tf.reduce_min(bias_measure, axis=[1, 2, 3]), [-1, 1, 1, 1])
     x_image = x_image0 - (im_bias * MASK)
     return x, y_label, x_image
+
+def init_xy_placeholder2():
+    x, y_regress_label, x_image = init_xy_placeholder()
+    y_class_label = tf.placeholder(tf.float32, shape=[None, 2])
+    return x, y_regress_label, y_class_label,x_image
