@@ -293,4 +293,4 @@ def read_data_batch(indx, batch_size, train_or_test):
             Y[i, :] = np.zeros((1, num_out))
 
         np.random.set_state(rand_state)
-        return X, Y, mag
+    return X, Y, mag
