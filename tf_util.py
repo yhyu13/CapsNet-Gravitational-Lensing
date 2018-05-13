@@ -5,25 +5,18 @@ from config import numpix_side, num_out, HPS
 def cost_tensor(y_conv, y_label):
     FLIPXY = tf.constant([[1., 0., 0., 0., 0.], [0., -1., 0., 0., 0.],
                           [0., 0., -1., 0., 0.], [0., 0., 0., 1., 0.], [0., 0., 0., 0., 1.]])
-    scale_par_cost = tf.constant([[1., 0., 0., 0., 0.], [0., 1., 0., 0., 0.], [
-                                 0., 0., 1., 0., 0.], [0., 0., 0., 1., 0.], [0., 0., 0., 0., 1.]])
     y_conv_flipped = tf.matmul(y_conv, FLIPXY)
-    scaled_delta_1 = tf.matmul(tf.pow(y_conv - y_label, 2), scale_par_cost)
-    scaled_delta_2 = tf.matmul(tf.pow(y_conv_flipped - y_label, 2), scale_par_cost)
-    MSE = tf.reduce_mean(tf.minimum(tf.reduce_mean(scaled_delta_1, axis=1),
-                                    tf.reduce_mean(scaled_delta_2, axis=1)), axis=0)
+    MSE = tf.reduce_mean(tf.minimum(tf.reduce_mean(tf.square(y_conv - y_label), axis=1),
+                                    tf.reduce_mean(tf.square(y_conv_flipped - y_label), axis=1)), axis=0)
     return MSE, y_conv_flipped
 
 
-def cost_tensor2(y_regress_conv, y_regress_label, y_class_conv, y_class_label):
+def cost_tensor2(y_regress_conv, y_regress_label, y_class_conv, y_class_label, loss='spread_loss'):
     FLIPXY = tf.constant([[1., 0., 0., 0., 0.], [0., -1., 0., 0., 0.],
                           [0., 0., -1., 0., 0.], [0., 0., 0., 1., 0.], [0., 0., 0., 0., 1.]])
-    scale_par_cost = tf.constant([[1., 0., 0., 0., 0.], [0., 1., 0., 0., 0.], [
-                                 0., 0., 1., 0., 0.], [0., 0., 0., 1., 0.], [0., 0., 0., 0., 1.]])
-    y_conv_flipped = tf.matmul(y_conv, FLIPXY)
-    scaled_delta_1 = tf.matmul(tf.pow(y_conv - y_label, 2), scale_par_cost)
-    scaled_delta_2 = tf.matmul(tf.pow(y_conv_flipped - y_label, 2), scale_par_cost)
-    MSE = tf.minimum(tf.reduce_mean(scaled_delta_1, axis=1), tf.reduce_mean(scaled_delta_2, axis=1))
+    y_conv_flipped = tf.matmul(y_regress_conv, FLIPXY)
+    MSE = tf.minimum(tf.reduce_mean(tf.square(y_regress_conv - y_regress_label), axis=1), tf.reduce_mean(tf.square(y_conv_flipped - y_regress_label), axis=1))
+    # regression loss shall be masked out iff lensing doesn't exist in label
     regress_loss_mask = tf.reduce_sum(tf.multiply(tf.constant([[0, 1]]), y_class_label), axis=1)
     MSE = tf.reduce_mean(MSE * regress_loss_mask, axis=0)
 
@@ -31,12 +24,20 @@ def cost_tensor2(y_regress_conv, y_regress_label, y_class_conv, y_class_label):
     lbd = HPS.lambda_margin_loss  # 0.5
     m_plus = HPS.m_plus_margin_loss  # 0.9
     m_minus = HPS.m_minus_margin_loss  # 0.1
-    Spread_loss = y_class_label * tf.square(tf.maximum(0., m_plus - y_class_conv)) + \
+    class_loss_tensor = y_class_label * tf.square(tf.maximum(0., m_plus - y_class_conv)) + \
         lbd * (1 - y_class_label) * tf.square(tf.maximum(0., y_class_conv - m_minus))
 
-    Spread_loss = tf.reduce_mean(tf.reduce_sum(Spread_loss, 1))
+    if spread_loss_or_cross_entropy == 'spread_loss'
+        class_loss_mean = tf.reduce_mean(tf.reduce_sum(class_loss_tensor, 1))
 
-    return Spread_loss + MSE, y_conv_flipped, spread_loss
+    else if spread_loss_or_cross_entropy == 'logistic':
+        class_loss_mean = tf.reduce_mean(y_class_label * tf.log(y_class_conv) + (1 - y_class_label) * tf.log(1-y_class_conv))
+
+    else:
+        print("Unknow loss function. Exit.", file=sys.stderr)
+        sys.exit()
+
+    return class_loss_mean, MSE, y_conv_flipped, class_loss_tensor
 
 
 def init_xy_placeholder():

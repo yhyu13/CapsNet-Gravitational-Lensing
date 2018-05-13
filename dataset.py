@@ -1,4 +1,4 @@
-# https://github.com/yhyu13/Ensai/blob/refactory/dataset.py
+# https://github.com/yasharhezaveh/Ensai/blob/master/get_data.py
 from config import *
 import numpy as np
 from PIL import Image
@@ -17,22 +17,21 @@ try:
     Y_all_train[1] = np.loadtxt(arcs_data_path_2 + 'parameters_train.txt')
     Y_all_test[1] = np.loadtxt(test_data_path_2 + 'parameters_test.txt')
 
-    Foreground_list_train = os.listdir(arcs_data_path_3)
-    Foreground_list_train.sort()
+    Foreground_list = {'train':[],'test':[]}
+    Foreground_list['train'] = os.listdir(arcs_data_path_3)
+    Foreground_list['train'].sort()
 
-    Foreground_list_test = os.listdir(test_data_path_3)
-    Foreground_list_test.sort()
+    Foreground_list['test'] = os.listdir(test_data_path_3)
+    Foreground_list['test'].sort()
 
     R_n = np.loadtxt(real_guassian_noise_path)
     I_n = np.loadtxt(imag_guassian_noise_path)
 except FileNotFoundError:
-    print("[Errno] No such file or directory. Exit.", file=sys.stderr)
-    sys.exit()
+    print("Original data set: No such file or directory.", file=sys.stderr)
 
 
 xv, yv = np.meshgrid(np.linspace(-L_side / 2.0, L_side / 2.0, num=numpix_side),
                      np.linspace(-L_side / 2.0, L_side / 2.0, num=numpix_side))
-
 
 # this code flips the ellipticity so that (-ex -ey) and (ex, ey) are both evaluated and the best combination is kept (parity invariance)
 def get_rotation_corrected(A, B, C):
@@ -131,7 +130,6 @@ def apply_psf(im, my_max_psf_rms, apply_prob=1.0):
         im[:] = blurred_im.reshape((-1, numpix_side * numpix_side))
     np.random.set_state(rand_state)
 
-
 def add_poisson_noise(im, apply_prob=1):
     np.random.uniform()
     rand_state = np.random.get_state()
@@ -210,6 +208,92 @@ def pick_new_lens_center(ARCS, Y, xy_range=0.5):
     np.random.set_state(rand_state)
     return shifted_ARCS, lensXY, m_shift, n_shift
 
+def read_data_batch(indx, batch_size, train_or_test):
+    X = np.zeros((batch_size, numpix_side * numpix_side), dtype='float32')
+    Y = np.zeros((batch_size, num_out), dtype='float32')
+    mag = np.zeros((batch_size, 1))
+    inds = range(indx * batch_size, (indx + 1) * batch_size)
+    if train_or_test == 'test':
+        d_path = [[], [], []]
+        d_path[0] = test_data_path_1
+        d_path[1] = test_data_path_2
+        d_path[2] = test_data_path_3
+        d_lens_path = [[], [], []]
+        d_lens_path[0] = testlens_data_path_1
+        d_lens_path[1] = testlens_data_path_2
+        d_lens_path[2] = testlens_data_path_3
+    else:
+        d_path = [[], [], []]
+        d_path[0] = arcs_data_path_1
+        d_path[1] = arcs_data_path_2
+        d_path[2] = arcs_data_path_3
+        d_lens_path = [[], [], []]
+        d_lens_path[0] = lens_data_path_1
+        d_lens_path[1] = lens_data_path_2
+        d_lens_path[2] = lens_data_path_3
+
+    for i in range(batch_size):
+        while True:
+            ARCS = 1
+            while np.min(ARCS) == 1 or np.max(ARCS) < 0.4:
+
+                pick_folder = 1
+                arc_filename = d_path[pick_folder] + train_or_test + \
+                    '_' + "%07d" % (inds[i] + 1) + '.png'
+                lens_filename = d_lens_path[pick_folder] + \
+                    train_or_test + '_' + "%07d" % (inds[i] + 1) + '.png'
+
+                if train_or_test == 'test':
+                    Y[i, :] = Y_all_test[pick_folder][inds[i], 0:5]
+                    mag[i] = Y_all_test[pick_folder][inds[i], 7]
+                else:
+                    Y[i, :] = Y_all_train[pick_folder][inds[i], 0:5]
+                    mag[i] = Y_all_train[pick_folder][inds[i], 7]
+
+                ARCS = np.array(Image.open(arc_filename), dtype='float32').reshape(
+                    numpix_side * numpix_side,) / 65535.0
+                LENS = np.array(Image.open(lens_filename), dtype='float32').reshape(
+                    numpix_side * numpix_side,) / 65535.0
+
+            ARCS_SHIFTED, lensXY, m_shift, n_shift = pick_new_lens_center(
+                ARCS, Y[i, :], xy_range=max_xy_range)
+            LENS_SHIFTED = im_shift(LENS.reshape((numpix_side, numpix_side)),
+                                    m_shift, n_shift).reshape((numpix_side * numpix_side,))
+
+            ARCS = np.copy(ARCS_SHIFTED)
+            Y[i, 3] = lensXY[0]
+            Y[i, 4] = lensXY[1]
+
+            if (np.all(np.isnan(ARCS) == False)) and ((np.all(ARCS >= 0)) and (np.all(np.isnan(Y[i, 3:5]) == False))) and ~np.all(ARCS == 0):
+                break
+
+        rand_state = np.random.get_state()
+
+        im_telescope = np.copy(ARCS) + LENS_SHIFTED * np.random.normal(loc=0.0, scale=0.01)
+        apply_psf(im_telescope, max_psf_rms, apply_prob=0.8)
+        add_poisson_noise(im_telescope, apply_prob=0.8)
+        add_cosmic_ray(im_telescope, apply_prob=0.8)
+        add_gaussian_noise(im_telescope)
+        mask = gen_masks(30, ARCS.reshape((numpix_side, numpix_side)), apply_prob=0.5)
+        mask = 1.0
+
+        if np.any(ARCS > 0.4):
+            val_to_normalize = np.max(im_telescope[ARCS > 0.4])
+            if val_to_normalize == 0:
+                val_to_normalize = 1.0
+            int_mult = np.random.normal(loc=1.0, scale=0.01)
+            im_telescope = (im_telescope / val_to_normalize) * int_mult
+
+        im_telescope = im_telescope.reshape(numpix_side, numpix_side)
+        zero_bias = np.random.normal(loc=0.0, scale=0.05)
+        im_telescope = (im_telescope + zero_bias) * mask
+        X[i, :] = im_telescope.reshape((1, -1))
+        if np.any(np.isnan(X[i, :])) or np.any(np.isnan(Y[i, :])):
+            X[i, :] = np.zeros((1, numpix_side * numpix_side))
+            Y[i, :] = np.zeros((1, num_out))
+
+        np.random.set_state(rand_state)
+    return X, Y, mag
 
 """
     read overlapped foreground/lensing images
@@ -221,24 +305,50 @@ def read_data_batch2(index, batch_size, train_or_test, pick_folder):
     mag = np.zeros((batch_size, 1))
     inds = range(indx * batch_size, (indx + 1) * batch_size)
     if train_or_test == 'test':
-        d_path = [[],[]]
+        d_path = [[], [], []]
         d_path[0] = test_data_path_1
         d_path[1] = test_data_path_2
-        d_lens_path = [[],[]]
+        d_path[2] = test_data_path_3
+        d_lens_path = [[], [], []]
         d_lens_path[0] = testlens_data_path_1
         d_lens_path[1] = testlens_data_path_2
+        d_lens_path[2] = testlens_data_path_3
     else:
-        d_path = [[],[]]
+        d_path = [[], [], []]
         d_path[0] = arcs_data_path_1
         d_path[1] = arcs_data_path_2
-        d_lens_path = [[],[]]
+        d_path[2] = arcs_data_path_3
+        d_lens_path = [[], [], []]
         d_lens_path[0] = lens_data_path_1
         d_lens_path[1] = lens_data_path_2
+        d_lens_path[2] = lens_data_path_3
 
     if pick_folder == 3:
-        foreground_list = Foreground_list[train_or_test][inds]
+        foreground_list = Foreground_list[train_or_test][(indx * batch_size):((indx + 1) * batch_size)]
+        src_numpix = 212
+        half_src_numpix = src_numpix/2
+        x_pos_0 = 96
+        y_pos_0 = 96
+        x_lens_pos = 0.1
+        y_lens_pos = 0.4
+        x_lens_shift = int(x_lens_pos/0.04)
+        y_lens_shift = int(x_lens_pos/0.04)
+        x_pos = x_pos_0 +  x_lens_shift
+        y_pos = y_pos_0 +  y_lens_shift
+        x_start = int(half_src_numpix - x_pos_0 - x_lens_shift)
+        x_end = int(half_src_numpix + x_pos_0 - x_lens_shift)
+        y_start = int(half_src_numpix - y_pos_0 - y_lens_shift)
+        y_end = int(half_src_numpix + y_pos_0 - y_lens_shift)
+        # set foreground galaxy label as true
+        Z[:,0] = 1
         for i in range(len(foreground_list)):
-
+            img_filename = d_path[pick_folder] + foreground_list[i]
+            IMG = np.array(Image.open(img_filename), dtype='float32')
+            IMG = IMG[int(half_src_numpix - x_pos_0 - x_lens_shift): int(half_src_numpix + x_pos_0 - x_lens_shift),
+                                  int(half_src_numpix - y_pos_0 - y_lens_shift): int(half_src_numpix + y_pos_0 - y_lens_shift)]
+            IMG = IMG.reshape(numpix_side * numpix_side,) / 65535.0
+            X[i,:] = IMG
+        return X, Y, Z, None
 
     for i in range(batch_size):
         while True:

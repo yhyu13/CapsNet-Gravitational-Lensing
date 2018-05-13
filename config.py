@@ -13,10 +13,10 @@ parser.add_argument('--n_img_col', type=int, default=192)
 parser.add_argument('--n_img_channels', type=int, default=1)
 parser.add_argument('--n_labels', type=int, default=5)
 parser.add_argument('--lr', type=float, default=1e-3)
-parser.add_argument('--model', default='cap2', help='choose between cnn and cap')
+parser.add_argument('--model', default='cap', help='choose between cnn and cap')
 parser.add_argument('--restore', action='store_true')
 parser.add_argument('--scaleup', action='store_true')
-parser.add_argument('--task', type=int, default=1)
+parser.add_argument('--task', type=int, default=2)
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
 
 FLAGS = parser.parse_args()
@@ -34,7 +34,7 @@ HPS = HParams(batch_size=FLAGS.n_batch,
               num_classes=10,
               num_labels=FLAGS.n_labels,
               task2_num_classes=2,
-              filters=[1, 128, 8, 16],
+              filters=[1, 128, 8, 16, 16],
               strides=[5, 5],
               cnn_kernel_size=9,
               padding="VALID",
@@ -91,6 +91,10 @@ num_data_dirs = 3
 # Get current working directory
 cwd = os.getcwd()
 
+
+# folder 1: background lensing arc only
+# folder 2: foreground background overlapped images
+# folder 3: foreground galaxy only
 arcs_data_path_1 = cwd + '/data/ARCS_2/ARCS_2/'
 arcs_data_path_2 = cwd + '/data/ARCS_2/ARCS_2/'
 arcs_data_path_3 = cwd + '/data/ARCS_2/ARCS_2/'
