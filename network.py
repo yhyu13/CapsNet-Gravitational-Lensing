@@ -152,7 +152,7 @@ class Network:
         for i in range(num_iter):
 
             X, Y, _ = read_data_batch(indx=np.random.randint(0, high=num_test_samples // self.num_batch)
-                                      if random_sample else i, batch_size=self.num_batch, train_or_test="test")
+                                      if random_sample else i, batch_size=50 if porportion > 1 else self.num_batch, train_or_test="test")
 
             if self.FLAGS.scaleup:
                 Y[:, 1:] *= 10
