@@ -105,7 +105,7 @@ class Network:
 
             if validation and (i % 100 == 0):
                 self.test(porportion=20, random_sample=True)
-                continue
+    
             x, y, _ = read_data_batch(indx=i, batch_size=self.num_batch, train_or_test="train")
             if self.FLAGS.scaleup:
                 y[:, 1:] *= 10
