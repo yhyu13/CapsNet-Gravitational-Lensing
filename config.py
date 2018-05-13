@@ -13,8 +13,8 @@ parser.add_argument('--n_img_col', type=int, default=192)
 parser.add_argument('--n_img_channels', type=int, default=1)
 parser.add_argument('--n_classes', type=int, default=10)
 parser.add_argument('--n_labels', type=int, default=5)
-parser.add_argument('--lr', type=float, default=1e-5)
-parser.add_argument('--model', default='cap2', help='choose between cnn and cap')
+parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--model', default='cap', help='choose between cnn and cap')
 parser.add_argument('--restore', action='store_true')
 parser.add_argument('--scaleup', action='store_true')
 parser.add_argument('--mode', dest='MODE', default='train', help='choose between train and test')
@@ -47,10 +47,10 @@ HPS = HParams(batch_size=FLAGS.n_batch,
               grad_defense=False,
               weight_decay_rate=1e-4,
               relu_leakiness=0.0,
-              fixed_lrn=True,
+              fixed_lrn=False,
               min_lrn_rate=1e-6,
               lrn_rate=FLAGS.lr,
-              decay_step=250,
+              decay_step=500,
               optimizer='adam',
               temperature=1.0,
               global_norm=100)

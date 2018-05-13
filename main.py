@@ -6,8 +6,11 @@ from network import *
 def train():
     # HPS, FLAGS defined in config.py
     net = Network(HPS, FLAGS)
-    net.train(validation=True)
-    
+    if FLAGS.restore:
+        net.restore_model()
+    for _ in range(FLAGS.global_epoch):
+        net.train(validation=True)
+
 def test():
     # HPS, FLAGS defined in config.py
     net = Network(HPS, FLAGS)

@@ -1,6 +1,6 @@
 from config import *
 from dataset import read_data_batch, get_rotation_corrected
-from model.capsnet_model import CapsNet, CapsNet2
+from model.capsnet_model import CapsNet
 from model.cnn_baseline import CNNBaseline
 
 from tf_util import init_xy_placeholder
@@ -42,8 +42,7 @@ class Network:
 
     def init_model(self):
         models = {'cnn': lambda: CNNBaseline(self.hps, self.x_image, self.y_label),
-                  'cap': lambda: CapsNet(self.hps, self.x_image, self.y_label),
-                  'cap2': lambda: CapsNet2(self.hps, self.x_image, self.y_label)}
+                  'cap': lambda: CapsNet(self.hps, self.x_image, self.y_label)}
         self.model = models[self.FLAGS.model]()
         logger.info("Building Model...")
         self.model.build_graph()
@@ -105,7 +104,7 @@ class Network:
 
             if validation and (i % 100 == 0):
                 self.test(porportion=20, random_sample=True)
-    
+
             x, y, _ = read_data_batch(indx=i, batch_size=self.num_batch, train_or_test="train")
             if self.FLAGS.scaleup:
                 y[:, 1:] *= 10
@@ -152,7 +151,7 @@ class Network:
         for i in range(num_iter):
 
             X, Y, _ = read_data_batch(indx=np.random.randint(0, high=num_test_samples // self.num_batch)
-                                      if random_sample else i, batch_size=self.num_batch, train_or_test="test")
+                                      if random_sample else i, batch_size=50 if porportion > 1 else self.num_batch, train_or_test="test")
 
             if self.FLAGS.scaleup:
                 Y[:, 1:] *= 10
