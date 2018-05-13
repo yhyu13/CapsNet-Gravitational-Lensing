@@ -193,32 +193,12 @@ class CapsNet(Baseline):
             # Compute length of each [None,output_num_capsule,output_dim_capsule]
             #y_pred = tf.sqrt(tf.reduce_sum(tf.square(cigits), 2))
             self.y_pred = self._fully_connected(cigits, self.hps.num_labels, name='capsules_final_fc', dropout_prob=0.5)
-        """
-        with tf.variable_scope('decoder'):
-            x_recon = self._fully_connected(self.y_pred, 512, name='fc1')
-            x_recon = self._fully_connected(x_recon, 1024, name='fc2')
-            "Make decision on how to downsmaple input images"
-            x_recon = self._fully_connected(x_recon, 28**2, name='fc_final')
-            x_recon = tf.reshape(x_recon, [-1, 28, 28, 1])
-            self.recon_images = tf.sigmoid(x_recon)
-            tf.logging.info('reconstructed image shape {}'.format(x_recon.get_shape()))
-       """
 
         with tf.variable_scope('costs'):
             self.L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
-            cost = self.L + self._decay()
+            cost = self.L #+ self._decay()
             tf.summary.scalar('Prediction_loss', self.L)
             tf.summary.scalar('Total_loss', cost)
-            """
-            L = tf.losses.mean_squared_error(label=self.lables, predictions=self.y_pred)
-            recon_L = tf.losses.mean_squared_error(labels=self.images, predictions=self.recon_images, weights=0.005 * 28**2)
-
-            cost = L + self._decay() + recon_L
-            tf.summary.scalar('Total_loss', cost)
-
-            tf.summary.scalar('Reconstruction_loss', recon_L)
-            return cost
-            """
         return cost
 
 class CapsNet2(CapsNet):
