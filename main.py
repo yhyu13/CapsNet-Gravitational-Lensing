@@ -8,18 +8,17 @@ def train():
     net = Network(HPS, FLAGS)
     if FLAGS.restore:
         net.restore_model()
-    for _ in range(FLAGS.global_epoch):
-        net.train(validation=True)
+    net.train(porportion=0.1)
 
 def test():
     # HPS, FLAGS defined in config.py
     net = Network(HPS, FLAGS)
     if FLAGS.restore:
         net.restore_model()
-    net.test()
+    net.test(porportion=0.1)
 
 if __name__ == "__main__":
 
     func = {'train': lambda: train(),
             'test': lambda: test()}
-    func[FLAGS.MODE]()
+    func[FLAGS.mode]()
