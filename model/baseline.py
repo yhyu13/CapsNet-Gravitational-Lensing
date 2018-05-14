@@ -225,7 +225,7 @@ class Baseline(object):
         x = tf.contrib.layers.flatten(x)
 
         if dropout_prob is not None:
-            x = tf.nn.dropout(x, dropout_prob)
+            x = tf.nn.dropout(x, keep_prob=dropout_prob)
 
         w = tf.get_variable(
             name + 'DW', [x.get_shape()[1], out_dim],

@@ -103,7 +103,7 @@ class Network:
         for i in range(num_iter):
 
             if validation and (i % 100 == 0):
-                self.test(porportion=20, random_sample=True)
+                self.test(porportion=10, random_sample=True)
 
             x, y, _ = read_data_batch(indx=i, batch_size=self.num_batch, train_or_test="train")
             if self.FLAGS.scaleup:

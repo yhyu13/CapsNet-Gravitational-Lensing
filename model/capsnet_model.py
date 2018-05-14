@@ -111,19 +111,19 @@ class CapsNet(Baseline):
         with tf.variable_scope('init'):
             x = self.images
             x = self._batch_norm('init_bn', x)
-            x = self._conv('init_conv', x, 9, 1, 128, self._stride_arr(5), padding='VALID')
+            x = self._conv('init_conv', x, 5, 1, 256, self._stride_arr(3), padding='VALID')
             x = self._relu(x)
             tf.logging.info('image after init {}'.format(x.get_shape()))
 
         with tf.variable_scope('init2'):
             x = self._batch_norm('init_bn', x)
-            x = self._conv('init_conv', x, 5, 128, 128, self._stride_arr(3), padding='VALID')
+            x = self._conv('init_conv', x, 5, 256, 256, self._stride_arr(3), padding='VALID')
             x = self._relu(x)
             tf.logging.info('image after init {}'.format(x.get_shape()))
 
         with tf.variable_scope('primal_capsules'):
             x = self._batch_norm('primal_capsules_bn', x)
-            x = self._conv('primal_capsules_conv', x, 5, 128, 128, self._stride_arr(1), padding='VALID')
+            x = self._conv('primal_capsules_conv', x, 5, 256, 256, self._stride_arr(3), padding='VALID')
 
             capsules_dims = 16
             num_capsules = np.prod(x.get_shape().as_list()[1:]) // capsules_dims
@@ -148,7 +148,7 @@ class CapsNet(Baseline):
 
         with tf.variable_scope('costs'):
             self.L, self.y_pred_flipped = cost_tensor(self.y_pred, self.labels)
-            cost = self.L #+ self._decay()
+            cost = self.L + self._decay()
             tf.summary.scalar('Prediction_loss', self.L)
             tf.summary.scalar('Total_loss', cost)
 

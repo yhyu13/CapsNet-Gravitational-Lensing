@@ -214,6 +214,7 @@ def read_data_batch(indx, batch_size, train_or_test):
     mag = np.zeros((batch_size, 1))
     inds = range(indx * batch_size, (indx + 1) * batch_size)
     if train_or_test == 'test':
+        min_unmasked_flux = 0.98
         d_path = [[], [], []]
         d_path[0] = test_data_path_1
         d_path[1] = test_data_path_2
@@ -223,6 +224,7 @@ def read_data_batch(indx, batch_size, train_or_test):
         d_lens_path[1] = testlens_data_path_2
         d_lens_path[2] = testlens_data_path_3
     else:
+        min_unmasked_flux = 0.75
         d_path = [[], [], []]
         d_path[0] = arcs_data_path_1
         d_path[1] = arcs_data_path_2
